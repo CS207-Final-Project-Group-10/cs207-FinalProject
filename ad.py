@@ -47,75 +47,55 @@ class Node(object):
         except AttributeError:
             return Division(Const(other), self)
         
-
-class Addition(Node):
+class Binop(Node):
     def __init__(self, a, b):
         a.is_node()
         b.is_node()
         self.a = a
         self.b = b
 
+class Unop(Node):
+    def __init__(self, a):
+        self.a = a
+
+class Addition(Binop):
     def eval(self, vars={}):
         return self.a.eval(vars) + self.b.eval(vars)
 
     def diff(self, vars={}):
         return self.a.diff(vars) + self.b.diff(vars)
 
-class Subtraction(Node):
-    def __init__(self, a, b):
-        a.is_node()
-        b.is_node()
-        self.a = a
-        self.b = b
-
+class Subtraction(Binop):
     def eval(self, vars={}):
         return self.a.eval(vars) - self.b.eval(vars)
 
     def diff(self, vars={}):
         return self.a.diff(vars) - self.b.diff(vars)
 
-class Multiplication(Node):
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        a.is_node()
-        b.is_node()
-
+class Multiplication(Binop):
     def eval(self, vars={}):
         return self.a.eval(vars) * self.b.eval(vars)
 
     def diff(self, vars={}):
         return self.a.eval(vars) * self.b.diff(vars) + self.a.diff(vars) * self.b.eval(vars)
 
-class Division(Node):
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        a.is_node()
-        b.is_node()
-
+class Division(Binop):
     def eval(self, vars={}):
         return self.a.eval(vars) / self.b.eval(vars)
 
     def diff(self, vars={}):
         return (self.a.diff(vars) * self.b.eval(vars) - self.a.eval(vars) * self.b.diff(vars)) / (self.b.eval(vars) * self.b.eval(vars))
 
-class Const(Node):
-    def __init__(self, a):
-        self.a = a
-
+class Const(Unop):
     def eval(self, vars={}):
         return self.a
 
     def diff(self, vars={}):
         return 0
 
-class Var(Node):
-    def __init__(self, var_name):
-        self.var_name = var_name
-    
+class Var(Unop):
     def eval(self, vars={}):
-        return vars[self.var_name]
+        return vars[self.a]
 
     def diff(self, vars={}):
         return 1
