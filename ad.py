@@ -12,10 +12,29 @@ class Node(object):
             return Addition(self, Const(other))
 
     def __radd__(self, other):
+        return self.__add__(self, other)
+
+    def __mul__(self, other):
         try:
-            return Addition(self, other)
+            return Multiplication(self, other)
         except AttributeError:
-            return Addition(self, Const(other))   
+            return Multiplication(self, Const(other))
+
+    def __rmul__(self, other):
+        return self.__mul__(self, other)
+
+class Multiplication(Node):
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+        a.is_node()
+        b.is_node()
+
+    def eval(self, vars={}):
+        return self.a.eval(vars) * self.b.eval(vars)
+
+    def diff(self, vars={}):
+        return self.a.eval(vars) * self.b.diff(vars) + self.a.diff(vars) * self.b.eval(vars)
 
 class Addition(Node):
     def __init__(self, a, b):
@@ -24,28 +43,28 @@ class Addition(Node):
         self.a = a
         self.b = b
 
-    def eval(self, vars):
+    def eval(self, vars={}):
         return self.a.eval(vars) + self.b.eval(vars)
 
-    def diff(self, vars):
+    def diff(self, vars={}):
         return self.a.diff(vars) + self.b.diff(vars)
 
 class Const(Node):
     def __init__(self, a):
         self.a = a
 
-    def eval(self, vars):
+    def eval(self, vars={}):
         return self.a
 
-    def diff(self, vars):
+    def diff(self, vars={}):
         return 0
 
 class Var(Node):
     def __init__(self, var_name):
         self.var_name = var_name
     
-    def eval(self, vars):
+    def eval(self, vars={}):
         return vars[self.var_name]
-
-    def diff(self, vars):
+        
+    def diff(self, vars={}):
         return 1
