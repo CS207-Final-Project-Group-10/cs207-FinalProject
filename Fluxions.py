@@ -1,4 +1,4 @@
-class Node(object):
+class Fluxion(object):
     def is_node(self):
         return True
 
@@ -53,14 +53,14 @@ class Node(object):
         except AttributeError:
             return Division(Const(other), self)
         
-class Binop(Node):
+class Binop(Fluxion):
     def __init__(self, a, b):
         a.is_node()
         b.is_node()
         self.a = a
         self.b = b
 
-class Unop(Node):
+class Unop(Fluxion):
     def __init__(self, a):
         self.a = a
 
