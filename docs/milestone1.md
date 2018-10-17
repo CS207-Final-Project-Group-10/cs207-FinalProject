@@ -24,12 +24,25 @@ std_norm = fl.exp(z**2)
 
 ```
 ```
-Here, `exp`, `power`, and `var` are all instances of classes in Fluxions that implement the concept of a differentiable function. The command `fl.var('z')` creates an instance of the `variable` class, which is very lightweight and essentially just keeps track of the variable as a named entity in the computation graph. At the time the expression (i.e. composition of functions) and/or its derivative is evaluated, numeric values are associated with each of these variable objects. 
+Here, `exp`, `power`, and `var` are all instances of classes in Fluxions that implement the concept of a differentiable function. The command `fl.var('z')` creates an instance of the `variable` class, which is very lightweight and essentially just keeps track of the variable as a named entity in the computation graph.
 
-All function classes implement an informal Fluxion interface, which requires that they define two methods: `eval` and `diff`, which evaluate and differentiate the function at one or more specified values, respectively. For instance, suppose the user wanted to evaluate the standard normal and its derivative at a set of points `z = np.linspace(-6, 6, 1201)` with seed values `dz = np.ones_like(z)`. They could simply call,
+All function classes implement an informal Fluxion interface, which requires that they define two methods: `eval` and `diff`, which respectively evaluate and differentiate the function at one or more specified values. The user may evaluate a function (or composition of functions) and/or its derivative either by associating values with a `var` object, or by evaluating the overall functional expression (i.e. composition of functions) after it has been constructed and associated with a single function object. For instance, suppose the user wanted to evaluate the standard normal and its derivative at a set of points `z = np.linspace(-6, 6, 1201)` with seed values `dz = np.ones_like(z)`. The following are equivalent ways to accomplish this with the Fluxions module:
 ```
-y = std_norm.eval(z)
-dydz = std_norm.diff(z, dz)
+z  = np.linspace(-6, 6, 1201)
+dz = np.ones_like(z)
+
+## 1st option
+y, dydz = fl.exp(fl.var({'z':z, 'dz':dz})**2)
+
+
+## 2nd option
+
+# build up function expression first
+std_norm = fl.exp(fl.var('z')**2)
+
+# then evaluate function and derivative at specified values
+y = std_norm.eval({'z':z})
+dydz = std_norm.diff({'z':z, 'dz':dz})
 ```
 
 These ideas can also be extended to functions of multiple variables. For example, to differentiate the function,
