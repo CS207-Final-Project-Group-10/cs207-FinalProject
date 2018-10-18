@@ -31,7 +31,7 @@ std_norm = fl.exp(z**2)
 
 Here, `exp`, `power`, and `var` are all instances of classes in Fluxions that implement the concept of a differentiable function. The command `fl.var('z')` creates an instance of the `variable` class, which is very lightweight and essentially just keeps track of the variable as a named entity in the computation graph.
 
-All function classes implement an informal Fluxion interface, which requires that they define two methods: `eval` and `diff`, which respectively evaluate and differentiate the function at one or more specified values. The user may evaluate a function (or composition of functions) and/or its derivative either by associating values with a `var` object, or by evaluating the overall functional expression (i.e. composition of functions) after it has been constructed and associated with a single function object. For instance, suppose the user wanted to evaluate the standard normal and its derivative at a set of points `z = np.linspace(-6, 6, 1201)` with seed values `dz = np.ones_like(z)`. The following are equivalent ways to accomplish this with the Fluxions module:
+All function classes implement a "fluxion" interface by defining two methods, `eval` and `diff`, which respectively evaluate and differentiate the function at one or more specified values. The user may evaluate a function (or composition of functions) and/or its derivative either by associating values with a `var` object, or by evaluating the overall functional expression (i.e. composition of functions) after it has been constructed and associated with a single function object. For instance, suppose the user wanted to evaluate the standard normal and its derivative at a set of points `z = np.linspace(-6, 6, 1201)` with seed values `dz = np.ones_like(z)`. The following are equivalent ways to accomplish this with the Fluxions module:
 
 ```
 z  = np.linspace(-6, 6, 1201)
@@ -42,7 +42,6 @@ y, dydz = fl.exp(fl.var({'z':z, 'dz':dz})**2)
 
 
 ## 2nd option
-
 # build up function expression first
 std_norm = fl.exp(fl.var('z')**2)
 
@@ -68,11 +67,9 @@ val, der = f.jacobian(a)
 
 Behind the scenes, the expression `(x*y*z)` would be evaluated as `product(product(x, y), z)`, while `1/(x*y*z)` would be treated as `quotient(const(1), product(product(x, y), z))`, where the implicit promotion from the integer `1` to a constant float would be handled in the appropriate operator overload call, here `__rdiv__`. 
 
-** VARIABLE-BINDING NEEDS CLARIFICATION: it seems very cumbersome for the user to have to explicitly declare which variables need to be bound to which names. So long as numeric values must be associated with `variable` objects, could we not just adopt its __name__? **
 The method `f.jacobian` would compute the Jacobian matrix of the function.  In this case, since f goes from $\mathbb{R^3}$ to $\mathbb{R}^1$, the Jacobian will be a 1x3 matrix.
 
-** THIS NEEDS CLARIFICATION **
-`fluxion` objects (differentiable functions) will be general enough to handle functions from $\mathbb{R^n}$ to $\mathbb{R}^m$. Operations in `Fluxions` will be vectorized to the fullest extent possible by building the module on top of the numpy package. In order to simultaneously evaluate $T$ inputs in $\mathbb{R}^n$, the user will pass as an argument an array with shape $(T, n)$.  If the user requests a derivative evaluated at one seed points with the `diff` method, the return arrays will be the function evaluation `val` with shape $(T, m)$ and the derivative `der` also with shape $(T, m)$.  If the user requests multiple specific points with the method `diff`, the return for `der` would instead be an array of shape $(T, m, k)$ where $k$ is the number of seed points given.  If the user requests the full Jacobian, they will receive an array `der` with shape $(T, m, n)$.  We may add an optional flag `squeeze` that defaults to `False` that would squeeze out array indices of size 1, since that is frequently the desired behavior from users.
+`fluxion` objects (differentiable functions) will be general enough to handle functions from $\mathbb{R^n}$ to $\mathbb{R}^m$. Operations in `fluxions` will be vectorized to the fullest extent possible by building the module on top of the numpy package. In order to simultaneously evaluate $T$ inputs in $\mathbb{R}^n$, the user will pass as an argument an array with shape $(T, n)$.  If the user requests a derivative evaluated at one seed points with the `diff` method, the return arrays will be the function evaluation `val` with shape $(T, m)$ and the derivative `der` also with shape $(T, m)$.  If the user requests multiple specific points with the method `diff`, the return for `der` would instead be an array of shape $(T, m, k)$ where $k$ is the number of seed points given.  If the user requests the full Jacobian, they will receive an array `der` with shape $(T, m, n)$.  We may add an optional flag `squeeze` that defaults to `False` that would squeeze out array indices of size 1, since that is frequently the desired behavior from users.
 
 ## Software Organization
 
