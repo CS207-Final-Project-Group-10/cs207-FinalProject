@@ -4,10 +4,10 @@
 
 ## Group Members:
 
-**William C. Burke**
-**Nathan Einstein**
-**Michael S. Emanuel**
-**Daniel Inge**
+- **William C. Burke**
+- **Nathan Einstein**
+- **Michael S. Emanuel**
+- **Daniel Inge**
 
 
 
