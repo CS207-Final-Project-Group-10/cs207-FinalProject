@@ -7,53 +7,72 @@ Calculus gives us a few simple rules we can apply to compute the derivative of a
 $$f'(u(x)) = f'(u(x) \cdot u'(x)$$
 The chain rule works in multiple dimensions.  If $f$ is a function from $\mathbb{R}^n$ to $\mathbb{R}^m$, its derivative an $m$ x $n$ matric called the Jacobian.  The chain rule in the multidimensional case tells us to take the matrix product of an $m$ x $r$ matrix and an $r$ x $n$ matrix to compute the derivative.
 
-The essential idea of Automatic Differentiation is that any computation performed by a computer will consist of a set of basic steps, e.g. function evaluations.  These may be strung together in a complex graph with multiple steps, but each step will be a basic operation.  For the evaluation of a mathematical function, each step will consist of either a "primitive" or built-in function (e.g. +, -, x, /, sqrt, log, exp, pow, etc.) or a composition of these primitives.  As long as we know how to evaluate both the function f(x) and its derivative f'(x) at each step, we can trace the calculation through the computation graph and also keep track of the first derivative.  This is the idea at the heart of Automatic Differentiation.
-
-The forward mode of Automatic Differentiation takes 3 arguments, a function, $f(x)$, a vector at which to evaluate the function,  $x \in \mathbb{R}^n$, and a vector of 'seed' values for the derivatives, $dx\in \mathbb{R}^
+The essential idea of Automatic Differentiation is that any computation performed by a computer will consist of a set of basic steps, e.g. function evaluations.  These may be strung together in a complex graph with multiple steps, but each step will be a basic operation.  For the evaluation of a mathematical function, each step will consist of either a "primitive" or built-in function (e.g. +, -, x, /, sqrt, log, exp, pow, etc.) or a composition of these primitives.  As long as we know how to evaluate both the function f(x) and its derivative f'(x) at each step, we can trace the calculation through the computation graph and also keep track of the first derivative.  This is the idea at the heart of Automatic Differentiation.The forward mode of Automatic Differentiation takes 3 arguments, a function, $f(x)$, a vector at which to evaluate the function,  $x \in \mathbb{R}^n$, and a vector of 'seed' values for the derivatives, $dx\in \mathbb{R}^
 n$. Following the canonical order of operations, the innermost elementary function calls of $f$ are evaluated at x and dx. As above, as long as we know how to evaluate both the elementary function f(x) and its derivative f'(x) at each step, we can use the chain rule to keep track of the first derivative as the algorithm evaluates the enclosing funcions. Once all function calls are complete, the algorithm returns the values $f(x)$ and $f'(x)$.
 
+For example, if we wish to use the forward mode algorithm to differentiate $f(x) = e^{x_1}cos(2x_1 + x_2)$ at the point $x = (x_1,x_2) = (0,\pi / 2)$, and we were only interested in the derivative with respect to $x_1$ we would pass the function $f$, the vector $x$, and $dx = (1,0)$. Starting from the innermost functions, we evaluate the derivative and the value of $e^{x_1}$. The value is the scalar 1 and the derivative is a vector $(1,0)$. Moving on, we evaluate the * operator on $2x_1$, giving a value 0 and the vector (2,0). The + operator gives the value $\pi/2$ and the vector (2,0). Cosine gives the scalar 0 and the vector $(-sin(2), 0)$. Finally, the multiplication operator between $e$ and $cos$ gives $f(x) = 0$ and  $f'(x) = (-sin(2),0)$ which would be the output. Because we passed the seed value $dx = (1,0)$, $f'(x) $ has a zero in the place corresponing to $x_2$. The zero in the seed carries through to the final derivative, only returning the non-zero entries.
+
+
+
 ## How to Use Fluxions
-The intention is that users will interact with the Fluxions library in a way that is very similar to the way they interact with `numpy` .  Basic functions such as `exp` would be imported from the module anagously to `numpy`, e.g. `import fluxions as fl`
-Suppose a user wanted a differentiable version of the standard normal distribution.  They could write
+The intention is that users will interact with the Fluxions module in a way that is very similar to the way they interact with `numpy` . The module will implement a complete set of elementary functions that can be strung together to form more complex expressions by passing them as arguments to any other function objects. Operator overloading will also enable users to connect function objects using symbolic operators such as `+`, `-`, `*`, `/`, and `**`. 
+
+Symbolic variables are themselves function objects, which can be set to take on one or more values at the time they are instantiated or after a larger expression has been built up. For instance, if a user wanted a differentiable version of the standard normal distribution, they could write either of the following:
 
 ```
+import fluxions as fl
+
 std_norm = fl.exp(fl.power(fl.var('z'),2))
-```
-Here `fl.exp` would be an instance of a class in Fluxions that implements the concept of a differentiable function, as would `fl.power`.  The command `fl.var('z')` would identify `z` as a formal parameter for the libary.  Before it evaluates the expression, it would create a set of all the distinct variables that appear.
-The library would use the chain rule to evaluate the function and its derivative on the required inputs.  Suppose the user wanted to evaluate the standard normal on a set of points `z = np.linspace(-6, 6, 1201)` with seed values `dz = np.ones_like(z)`.  They could invoke the forward mode with the command
-```
-p, dp_dz = std_norm.diff_fwd(input=z, seed=dp_dz)
+
+z = fl.var('z')
+std_norm = fl.exp(z**2)
+
 ```
 
-Basic mathematical operations will be expressible using operator overloading for `+`, `-`, `*`, `/`, and `**`.  So for example, a user should also be able to construct an equivalent standard normal via
+Here, `exp`, `power`, and `var` are all instances of classes in Fluxions that implement the concept of a differentiable function. The command `fl.var('z')` creates an instance of the `variable` class, which is very lightweight and essentially just keeps track of the variable as a named entity in the computation graph.
+
+All function classes implement an informal Fluxion interface, which requires that they define two methods: `eval` and `diff`, which respectively evaluate and differentiate the function at one or more specified values. The user may evaluate a function (or composition of functions) and/or its derivative either by associating values with a `var` object, or by evaluating the overall functional expression (i.e. composition of functions) after it has been constructed and associated with a single function object. For instance, suppose the user wanted to evaluate the standard normal and its derivative at a set of points `z = np.linspace(-6, 6, 1201)` with seed values `dz = np.ones_like(z)`. The following are equivalent ways to accomplish this with the Fluxions module:
+
 ```
-std_norm2 = fl.exp(fl.var('z')**2)
-std_norm3 = fl.exp(fl.var('z')*fl.var('z))
+z  = np.linspace(-6, 6, 1201)
+dz = np.ones_like(z)
+
+## 1st option
+y, dydz = fl.exp(fl.var({'z':z, 'dz':dz})**2)
+
+
+## 2nd option
+
+# build up function expression first
+std_norm = fl.exp(fl.var('z')**2)
+
+# then evaluate function and derivative at specified values
+y = std_norm.eval({'z':z})
+dydz = std_norm.diff({'z':z, 'dz':dz})
 ```
 
-On homework 4, problem 1 asked us to differentiate at the point $a = (1, 2, 3)$.
+These ideas can also be extended to functions of multiple variables. For example, to differentiate the function,
 
 $$f(x, y, z) = \frac{1}{xyz} + \sin\left( \frac{1}{x} + \frac{1}{y} + \frac{1}{z}\right)$$
 
-Here is how a user might solve this using the fluxions library:
+at the point $a = (1, 2, 3)$, the user could write:
 
 ```
 x = fl.var('x')
 y = fl.var('y')
 z = fl.var('z')
 f = 1 / (x*y*z) + fl.sin(1/x + 1/y + 1/z)
-f.set_var_order(['x', 'y', 'z'])
 a = np.array([1, 2, 3])
-val, der = f.jacobian_fwd(input=np.array([1, 2, 3]))
+val, der = f.jacobian(a)
 ```
 
-The first three statements would create instances of a `variable` class.  This would be very lightweight and essentially just keep track of the variable as a named entity in the computation graph.  The fourth statements is where all action would take place.  It would create an instance of the `fluxion` class, the workhorse for differentiable functions in this library.  Behind the scenes, the library would evaluate the expression `(x*y*z)` as `product(product(x, y), z)`.  It would treat`1/(x*y*z)` as `quotient(const(1), product(product(x, y), z))`, where the implicit promotion from the integer `1` to a constant float would be handled in the appropriate operator overload call, here `__rdiv__`. 
+Behind the scenes, the expression `(x*y*z)` would be evaluated as `product(product(x, y), z)`, while `1/(x*y*z)` would be treated as `quotient(const(1), product(product(x, y), z))`, where the implicit promotion from the integer `1` to a constant float would be handled in the appropriate operator overload call, here `__rdiv__`. 
 
-The command `f.set_var_order` informs the library that when it sees arguments as an array with 3 columns (matching the number of inputs), it should bind them to the variables x, y, z in that order.  The method `f.jacobian` would compute the Jacobian matrix of the function.  In this case, since f goes from $\mathbb{R^3}$ to $\mathbb{R}^1$, the Jacobian will be a 1x3 matrix.
+** VARIABLE-BINDING NEEDS CLARIFICATION: it seems very cumbersome for the user to have to explicitly declare which variables need to be bound to which names. So long as numeric values must be associated with `variable` objects, could we not just adopt its __name__? **
+The method `f.jacobian` would compute the Jacobian matrix of the function.  In this case, since f goes from $\mathbb{R^3}$ to $\mathbb{R}^1$, the Jacobian will be a 1x3 matrix.
 
-One important set of conventions would relate to the shape of arrays.  `fluxion` objects (differentiable functions) will be general enough to handle functions from $\mathbb{R^n}$ to $\mathbb{R}^m$.  (This convention is common and the mnemonic to recall it is that the Jacobian will be an $m$ x $n$ matrix.)  Operations in `fluxions` will be vectorized to the fullest extent possible &mdash; no nested for loops for calculations on arrays unless the user is a noob!  In order to submit $T$ inputs in $\mathbb{R}^n$, the user will pass as input an array with shape $(T, n)$.  If the user requests a derivative evaluated at one seed points with the `diff_fwd` method, the return arrays will be the function evaluation `val` with shape $(T, m)$ and the derivative `der` also with shape $(T, m)$.  If the user requests multiple specific points with the method `diffs_fwd`, the return for `der` would instead be an array of shape $(T, m, k)$ where $k$ is the number of seed points given.  If the user requests the full Jacobian, they will receive an array `der` with shape $(T, m, n)$.  We may add an optional flag `squeeze` that defaults to `False` that would squeeze out array indices of size 1, since that is frequently the desired behavior from users.
-
-To the extent possible, if `numpy` has made a decision regarding the interface of a mathematical function, we will follow it in `fluxions`.  These policies include the names of functions, the names of arguments, and order of arguments.  Why `numpy`? It's a successful and high quality library that is in wide use.  Almost all of the user base for a Python library that does automatic differentiation will also be using `numpy`.  The more our library looks and acts like `numpy`, the easier it will be to use.  It will also simplify implementing it with `numpy` as the back end.
+** THIS NEEDS CLARIFICATION **
+`fluxion` objects (differentiable functions) will be general enough to handle functions from $\mathbb{R^n}$ to $\mathbb{R}^m$. Operations in `Fluxions` will be vectorized to the fullest extent possible by building the module on top of the numpy package. In order to simultaneously evaluate $T$ inputs in $\mathbb{R}^n$, the user will pass as an argument an array with shape $(T, n)$.  If the user requests a derivative evaluated at one seed points with the `diff` method, the return arrays will be the function evaluation `val` with shape $(T, m)$ and the derivative `der` also with shape $(T, m)$.  If the user requests multiple specific points with the method `diff`, the return for `der` would instead be an array of shape $(T, m, k)$ where $k$ is the number of seed points given.  If the user requests the full Jacobian, they will receive an array `der` with shape $(T, m, n)$.  We may add an optional flag `squeeze` that defaults to `False` that would squeeze out array indices of size 1, since that is frequently the desired behavior from users.
 
 ## Software Organization
 
@@ -62,6 +81,7 @@ The fluxions library will have the following directory structure:
   ```
      fluxions/
            build/
+                 lib/
                  ...
            fluxions/
                  __init__.py
