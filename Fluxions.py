@@ -1,3 +1,5 @@
+import numpy as np
+
 class Fluxion(object):
     def is_node(self):
         return True
@@ -104,7 +106,7 @@ class Var(Unop):
         return vars[self.a]
 
     def diff(self, vars={}):
-        return 1
+        return 1*(np.array(list(vars)) == self.a)
 
 if __name__ == "__main__":
     # Examples
