@@ -61,62 +61,62 @@ class Fluxion:
         
 class Binop(Fluxion):
     """Abstract class embodying a binary operation"""
-    def __init__(self, a, b):
-        a.is_node()
-        b.is_node()
-        self.a = a
-        self.b = b
+    def __init__(self, f, g):
+        f.is_node()
+        g.is_node()
+        self.f = f
+        self.g = g
 
 class Unop(Fluxion):
     """Abstract class embodying a unary operation"""
-    def __init__(self, a):
-        self.a = a
+    def __init__(self, f):
+        self.f = f
 
 class Addition(Binop):
     def eval(self, vars={}):
         # (f+g)(x) = f(x) + g(x)
-        return self.a.eval(vars) + self.b.eval(vars)
+        return self.f.eval(vars) + self.g.eval(vars)
 
     def diff(self, vars={}):
         # (f+g)'(x) = f'(x) + g'(x)
-        return self.a.diff(vars) + self.b.diff(vars)
+        return self.f.diff(vars) + self.g.diff(vars)
 
 class Subtraction(Binop):
     def eval(self, vars={}):
         # (f-g)(x) = f(x) - g(x)
-        return self.a.eval(vars) - self.b.eval(vars)
+        return self.f.eval(vars) - self.g.eval(vars)
 
     def diff(self, vars={}):
         # (f-g)'(x) = f'(x) - g'(x)
-        return self.a.diff(vars) - self.b.diff(vars)
+        return self.f.diff(vars) - self.g.diff(vars)
 
 class Multiplication(Binop):
     def eval(self, vars={}):
         # (f*g)(x) = f(x) * g(x)
-        return self.a.eval(vars) * self.b.eval(vars)
+        return self.f.eval(vars) * self.g.eval(vars)
 
     def diff(self, vars={}):
         # Product Rule of calculus
         # https://en.wikipedia.org/wiki/Product_rule#Examples
         # (f*g)'(x) = f'(x) + g(x) + f(x)*g'(x)
-        return self.a.eval(vars) * self.b.diff(vars) + self.a.diff(vars) * self.b.eval(vars)
+        return self.f.eval(vars) * self.g.diff(vars) + self.f.diff(vars) * self.g.eval(vars)
 
 class Division(Binop):
     def eval(self, vars={}):
         #(f/g)(x) = f(x) / g(x)
-        return self.a.eval(vars) / self.b.eval(vars)
+        return self.f.eval(vars) / self.g.eval(vars)
 
     def diff(self, vars={}):
         # Quotient Rule of calculus
         # https://en.wikipedia.org/wiki/Quotient_rule
         # f(x) = g(x) / h(x),
         # f'(x) = (g('x)h(x) - g(x)h'(x)) / h(x)^2
-        return (self.a.diff(vars) * self.b.eval(vars) - self.a.eval(vars) * self.b.diff(vars)) / \
-                (self.b.eval(vars) * self.b.eval(vars))
+        return (self.f.diff(vars) * self.g.eval(vars) - self.f.eval(vars) * self.g.diff(vars)) / \
+                (self.g.eval(vars) * self.g.eval(vars))
 
 class Const(Unop):
     def eval(self, vars={}):
-        return self.a
+        return self.f
 
     def diff(self, vars={}):
         # The derivative of a constant is zero
@@ -124,10 +124,10 @@ class Const(Unop):
 
 class Var(Unop):
     def eval(self, vars={}):
-        return vars[self.a]
+        return vars[self.f]
 
     def diff(self, vars={}):
-        return 1*(np.array(list(vars)) == self.a)
+        return 1*(np.array(list(vars)) == self.f)
 
 if __name__ == "__main__":
     # Examples
