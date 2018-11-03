@@ -1,12 +1,16 @@
 import numpy as np
 
 class Fluxion:
-    def is_node(self):
-        return True
+    """A Fluxion embodies a differentiable function"""
 
     def __init__(self):
         self.is_node()
 
+    def is_node(self):
+        """Used for implicit promotion of constants"""
+        return True
+
+    # Overload operators: +, -, *, /
     def __add__(self, other):
         try:
             return Addition(self, other)
@@ -56,6 +60,7 @@ class Fluxion:
             return Division(Const(other), self)
         
 class Binop(Fluxion):
+    """Abstract class embodying a binary operation"""
     def __init__(self, a, b):
         a.is_node()
         b.is_node()
@@ -63,42 +68,58 @@ class Binop(Fluxion):
         self.b = b
 
 class Unop(Fluxion):
+    """Abstract class embodying a unary operation"""
     def __init__(self, a):
         self.a = a
 
 class Addition(Binop):
     def eval(self, vars={}):
+        # (f+g)(x) = f(x) + g(x)
         return self.a.eval(vars) + self.b.eval(vars)
 
     def diff(self, vars={}):
+        # (f+g)'(x) = f'(x) + g'(x)
         return self.a.diff(vars) + self.b.diff(vars)
 
 class Subtraction(Binop):
     def eval(self, vars={}):
+        # (f-g)(x) = f(x) - g(x)
         return self.a.eval(vars) - self.b.eval(vars)
 
     def diff(self, vars={}):
+        # (f-g)'(x) = f'(x) - g'(x)
         return self.a.diff(vars) - self.b.diff(vars)
 
 class Multiplication(Binop):
     def eval(self, vars={}):
+        # (f*g)(x) = f(x) * g(x)
         return self.a.eval(vars) * self.b.eval(vars)
 
     def diff(self, vars={}):
+        # Product Rule of calculus
+        # https://en.wikipedia.org/wiki/Product_rule#Examples
+        # (f*g)'(x) = f'(x) + g(x) + f(x)*g'(x)
         return self.a.eval(vars) * self.b.diff(vars) + self.a.diff(vars) * self.b.eval(vars)
 
 class Division(Binop):
     def eval(self, vars={}):
+        #(f/g)(x) = f(x) / g(x)
         return self.a.eval(vars) / self.b.eval(vars)
 
     def diff(self, vars={}):
-        return (self.a.diff(vars) * self.b.eval(vars) - self.a.eval(vars) * self.b.diff(vars)) / (self.b.eval(vars) * self.b.eval(vars))
+        # Quotient Rule of calculus
+        # https://en.wikipedia.org/wiki/Quotient_rule
+        # f(x) = g(x) / h(x),
+        # f'(x) = (g('x)h(x) - g(x)h'(x)) / h(x)^2
+        return (self.a.diff(vars) * self.b.eval(vars) - self.a.eval(vars) * self.b.diff(vars)) / \
+                (self.b.eval(vars) * self.b.eval(vars))
 
 class Const(Unop):
     def eval(self, vars={}):
         return self.a
 
     def diff(self, vars={}):
+        # The derivative of a constant is zero
         return 0
 
 class Var(Unop):
