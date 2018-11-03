@@ -1,6 +1,13 @@
 import pytest
+
+# Use the __init__ file in this directory to set the path so this runs from the command line
+import __init__ as init
+init.set_path()
+# Now ready to import fluxions - it will be on the search path
 import fluxions as fl
 
+
+# *************************************************************************************************
 def test_basic_usage():
     # f(x) = 5x
     f_x = 5 * fl.Var('x')
@@ -24,3 +31,5 @@ def test_basic_usage():
 
 # Run the test
 test_basic_usage()
+# Report results
+print(f'test_basic_usage: **** PASS ****')
