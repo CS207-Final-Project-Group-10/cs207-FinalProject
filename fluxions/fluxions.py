@@ -1,6 +1,6 @@
 import numpy as np
 
-class Fluxion(object):
+class Fluxion:
     def is_node(self):
         return True
 

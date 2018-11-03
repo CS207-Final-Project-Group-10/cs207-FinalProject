@@ -1,5 +1,5 @@
 import pytest
-import fluxions as fl
+from . import fluxions as fl
 
 def test_basic_usage():
     # f(x) = 5x
