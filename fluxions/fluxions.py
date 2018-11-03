@@ -73,63 +73,63 @@ class Unop(Fluxion):
         self.f = f
 
 class Addition(Binop):
-    def val(self, vars={}):
+    def val(self, var=dict()):
         # (f+g)(x) = f(x) + g(x)
-        return self.f.val(vars) + self.g.val(vars)
+        return self.f.val(var) + self.g.val(var)
 
-    def diff(self, vars={}):
+    def diff(self, var=dict()):
         # (f+g)'(x) = f'(x) + g'(x)
-        return self.f.diff(vars) + self.g.diff(vars)
+        return self.f.diff(var) + self.g.diff(var)
 
 class Subtraction(Binop):
-    def val(self, vars={}):
+    def val(self, var=dict()):
         # (f-g)(x) = f(x) - g(x)
-        return self.f.val(vars) - self.g.val(vars)
+        return self.f.val(var) - self.g.val(var)
 
-    def diff(self, vars={}):
+    def diff(self, var=dict()):
         # (f-g)'(x) = f'(x) - g'(x)
-        return self.f.diff(vars) - self.g.diff(vars)
+        return self.f.diff(var) - self.g.diff(var)
 
 class Multiplication(Binop):
-    def val(self, vars={}):
+    def val(self, var=dict()):
         # (f*g)(x) = f(x) * g(x)
-        return self.f.val(vars) * self.g.val(vars)
+        return self.f.val(var) * self.g.val(var)
 
-    def diff(self, vars={}):
+    def diff(self, var=dict()):
         # Product Rule of calculus
         # https://en.wikipedia.org/wiki/Product_rule#Examples
         # (f*g)'(x) = f'(x) + g(x) + f(x)*g'(x)
-        return self.f.val(vars) * self.g.diff(vars) + self.f.diff(vars) * self.g.val(vars)
+        return self.f.val(var) * self.g.diff(var) + self.f.diff(var) * self.g.val(var)
 
 class Division(Binop):
-    def val(self, vars={}):
+    def val(self, var=dict()):
         #(f/g)(x) = f(x) / g(x)
-        return self.f.val(vars) / self.g.val(vars)
+        return self.f.val(var) / self.g.val(var)
 
-    def diff(self, vars={}):
+    def diff(self, var=dict()):
         # Quotient Rule of calculus
         # https://en.wikipedia.org/wiki/Quotient_rule
         # f(x) = g(x) / h(x),
         # f'(x) = (g('x)h(x) - g(x)h'(x)) / h(x)^2
-        return (self.f.diff(vars) * self.g.val(vars) - self.f.val(vars) * self.g.diff(vars)) / \
-                (self.g.val(vars) * self.g.val(vars))
+        return (self.f.diff(var) * self.g.val(var) - self.f.val(var) * self.g.diff(var)) / \
+                (self.g.val(var) * self.g.val(var))
 
 class Const(Unop):
-    def val(self, vars={}):
+    def val(self, var=dict()):
         return self.f
 
-    def diff(self, vars={}):
+    def diff(self, var=dict()):
         # The derivative of a constant is zero
         return 0
 
 class Var(Unop):
-    def val(self, vars={}):
+    def val(self, var=dict()):
         """The val method of a variable returns its value"""
-        return vars[self.f]
+        return var[self.f]
 
-    def diff(self, vars={}):
+    def diff(self, var=dict()):
         """The diff method of a variable returns its value"""
-        return 1*(np.array(list(vars)) == self.f)
+        return 1*(np.array(list(var)) == self.f)
 
 if __name__ == "__main__":
     # Examples
