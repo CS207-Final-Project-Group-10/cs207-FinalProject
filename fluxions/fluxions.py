@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List
 
 class Fluxion:
     """A Fluxion embodies a differentiable function"""
@@ -58,7 +59,63 @@ class Fluxion:
             return Division(other, self)
         except AttributeError:
             return Division(Const(other), self)
-        
+
+    # Set the order of variables so this fluxion can be callable
+    def set_var_names(self, var_names: List[str]):
+        """Associate a Fluxion with an ordered list of variable names."""
+        self.var_names = var_names
+
+    def bind_args(self, *args):
+        """Bind arguments in a variable table"""
+        # Create variables dictionary, var
+        var_tbl = dict()
+        for i, arg in enumerate(args):
+            var_name = self.var_names[i]
+            var_tbl[var_name] = arg
+        return var_tbl
+
+
+# *************************************************************************************************
+class Unop(Fluxion):
+    """Abstract class embodying a unary operation"""
+    def __init__(self, f):
+        self.f = f
+
+class Const(Unop):
+    def __init__(self, a):
+        self.a = a
+
+    def val(self, var=dict()):
+        return self.a
+
+    def diff(self, var=dict()):
+        # The derivative of a constant is zero
+        return 0
+
+class Var(Unop):
+    def __init__(self, nm):
+        self.nm = nm
+
+    def val(self, arg):
+        """The diff method of a variable returns its value"""
+        # If argument is a dictionary containing this variable name, 
+        # assume it was passed in dictionary  (var_tbl) format and look it up by name
+        if type(arg) == dict and self.nm in arg:
+            return arg[self.nm]
+        else:
+            # Otherwise, assume arg was the value to be passed
+            return arg
+
+    def diff(self, var_tbl=dict()):
+        """The diff method of a variable returns a 1 """
+        return 1*(np.array(list(var_tbl)) == self.nm)
+
+    def __call__(self, arg):
+        """Make variables callable like functions"""
+        return self.val(arg)
+
+
+# *************************************************************************************************
 class Binop(Fluxion):
     """Abstract class embodying a binary operation"""
     def __init__(self, f, g):
@@ -66,11 +123,6 @@ class Binop(Fluxion):
         g.is_node()
         self.f = f
         self.g = g
-
-class Unop(Fluxion):
-    """Abstract class embodying a unary operation"""
-    def __init__(self, f):
-        self.f = f
 
 class Addition(Binop):
     def val(self, var=dict()):
@@ -114,42 +166,29 @@ class Division(Binop):
         return (self.f.diff(var) * self.g.val(var) - self.f.val(var) * self.g.diff(var)) / \
                 (self.g.val(var) * self.g.val(var))
 
-class Const(Unop):
-    def val(self, var=dict()):
-        return self.f
-
-    def diff(self, var=dict()):
-        # The derivative of a constant is zero
-        return 0
-
-class Var(Unop):
-    def val(self, var=dict()):
-        """The val method of a variable returns its value"""
-        return var[self.f]
-
-    def diff(self, var=dict()):
-        """The diff method of a variable returns its value"""
-        return 1*(np.array(list(var)) == self.f)
-
 if __name__ == "__main__":
     # Examples
+
+    # Create a variable, x
+    x = Var('x')
+
     # f(x) = 5x
-    f_x = 5 * Var('x')
+    f_x = 5 * x
     assert(f_x.val({'x':2}) == 10)
     assert(f_x.diff({'x':2}) == 5)
 
     # f(x) = 1 + (x * x)
-    f_x = 1 + Var('x') * Var('x')
+    f_x = 1 + x * x
     assert(f_x.val({'x':2}) == 5)
     assert(f_x.diff({'x':3}) == 6)  
 
     # f(x) = (1 + x)/(x * x) 
-    f_x = (1 + Var('x')) / (Var('x') * Var('x'))
+    f_x = (1 + x) / (x * x)
     assert(f_x.val({'x':2}) == 0.75)
     assert(f_x.diff({'x':2}) == -0.5)
 
     # f(x) = (1 + 5x)/(x * x) 
-    f_x = (1 + 5 * Var('x')) / (Var('x') * Var('x'))
+    f_x = (1 + 5 * x) / (x * x)
     assert(f_x.val({'x':2}) == 2.75)
     assert(f_x.diff({'x':2}) == -1.5)
 
