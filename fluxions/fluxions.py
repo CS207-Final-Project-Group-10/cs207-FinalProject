@@ -73,49 +73,49 @@ class Unop(Fluxion):
         self.f = f
 
 class Addition(Binop):
-    def eval(self, vars={}):
+    def val(self, vars={}):
         # (f+g)(x) = f(x) + g(x)
-        return self.f.eval(vars) + self.g.eval(vars)
+        return self.f.val(vars) + self.g.val(vars)
 
     def diff(self, vars={}):
         # (f+g)'(x) = f'(x) + g'(x)
         return self.f.diff(vars) + self.g.diff(vars)
 
 class Subtraction(Binop):
-    def eval(self, vars={}):
+    def val(self, vars={}):
         # (f-g)(x) = f(x) - g(x)
-        return self.f.eval(vars) - self.g.eval(vars)
+        return self.f.val(vars) - self.g.val(vars)
 
     def diff(self, vars={}):
         # (f-g)'(x) = f'(x) - g'(x)
         return self.f.diff(vars) - self.g.diff(vars)
 
 class Multiplication(Binop):
-    def eval(self, vars={}):
+    def val(self, vars={}):
         # (f*g)(x) = f(x) * g(x)
-        return self.f.eval(vars) * self.g.eval(vars)
+        return self.f.val(vars) * self.g.val(vars)
 
     def diff(self, vars={}):
         # Product Rule of calculus
         # https://en.wikipedia.org/wiki/Product_rule#Examples
         # (f*g)'(x) = f'(x) + g(x) + f(x)*g'(x)
-        return self.f.eval(vars) * self.g.diff(vars) + self.f.diff(vars) * self.g.eval(vars)
+        return self.f.val(vars) * self.g.diff(vars) + self.f.diff(vars) * self.g.val(vars)
 
 class Division(Binop):
-    def eval(self, vars={}):
+    def val(self, vars={}):
         #(f/g)(x) = f(x) / g(x)
-        return self.f.eval(vars) / self.g.eval(vars)
+        return self.f.val(vars) / self.g.val(vars)
 
     def diff(self, vars={}):
         # Quotient Rule of calculus
         # https://en.wikipedia.org/wiki/Quotient_rule
         # f(x) = g(x) / h(x),
         # f'(x) = (g('x)h(x) - g(x)h'(x)) / h(x)^2
-        return (self.f.diff(vars) * self.g.eval(vars) - self.f.eval(vars) * self.g.diff(vars)) / \
-                (self.g.eval(vars) * self.g.eval(vars))
+        return (self.f.diff(vars) * self.g.val(vars) - self.f.val(vars) * self.g.diff(vars)) / \
+                (self.g.val(vars) * self.g.val(vars))
 
 class Const(Unop):
-    def eval(self, vars={}):
+    def val(self, vars={}):
         return self.f
 
     def diff(self, vars={}):
@@ -123,32 +123,34 @@ class Const(Unop):
         return 0
 
 class Var(Unop):
-    def eval(self, vars={}):
+    def val(self, vars={}):
+        """The val method of a variable returns its value"""
         return vars[self.f]
 
     def diff(self, vars={}):
+        """The diff method of a variable returns its value"""
         return 1*(np.array(list(vars)) == self.f)
 
 if __name__ == "__main__":
     # Examples
     # f(x) = 5x
     f_x = 5 * Var('x')
-    assert(f_x.eval({'x':2}) == 10)
+    assert(f_x.val({'x':2}) == 10)
     assert(f_x.diff({'x':2}) == 5)
 
     # f(x) = 1 + (x * x)
     f_x = 1 + Var('x') * Var('x')
-    assert(f_x.eval({'x':2}) == 5)
+    assert(f_x.val({'x':2}) == 5)
     assert(f_x.diff({'x':3}) == 6)  
 
     # f(x) = (1 + x)/(x * x) 
     f_x = (1 + Var('x')) / (Var('x') * Var('x'))
-    assert(f_x.eval({'x':2}) == 0.75)
+    assert(f_x.val({'x':2}) == 0.75)
     assert(f_x.diff({'x':2}) == -0.5)
 
     # f(x) = (1 + 5x)/(x * x) 
     f_x = (1 + 5 * Var('x')) / (Var('x') * Var('x'))
-    assert(f_x.eval({'x':2}) == 2.75)
+    assert(f_x.val({'x':2}) == 2.75)
     assert(f_x.diff({'x':2}) == -1.5)
 
     print("Tests passed")
