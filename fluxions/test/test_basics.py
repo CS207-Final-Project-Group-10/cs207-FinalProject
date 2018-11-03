@@ -1,5 +1,5 @@
 import pytest
-from . import fluxions as fl
+import fluxions as fl
 
 def test_basic_usage():
     # f(x) = 5x
@@ -22,3 +22,5 @@ def test_basic_usage():
     assert(f_x.eval({'x':2}) == 2.75)
     assert(f_x.diff({'x':2}) == -1.5)
 
+# Run the test
+test_basic_usage()
