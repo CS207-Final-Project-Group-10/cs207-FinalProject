@@ -1,10 +1,10 @@
 import pytest
 
 # Use the __init__ file in this directory to set the path so this runs from the command line
-import __init__ as init
-init.set_path()
+#import __init__ as init
+#init.set_path()
 # Now ready to import fluxions - it will be on the search path
-import fluxions as fl
+from fluxions import fluxions as fl
 
 
 # *************************************************************************************************
