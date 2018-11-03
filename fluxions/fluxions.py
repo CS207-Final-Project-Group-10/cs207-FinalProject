@@ -137,15 +137,19 @@ class Var(Unop):
         # If no argument is passed, the derivative of f(x) = x is 1
         if arg is None:
             return 1
+        try:
+            l = len(arg[self.nm])
+        except(TypeError):
+            l = 1
         # If argument was a dictionary, look up to set 1s where the variable name is matched
         if isinstance(arg, dict):
             # If the variable table has length 1, return a scalar rather than an array of length 1
             if len(arg) == 1:
-                return 1.0 if self.nm in arg else 0.0
+                return np.asarray([1.0]*l) if self.nm in arg else np.asarray([1.0]*l)
             else:
-                return 1.0*(np.array(list(arg)) == self.nm)
+                return np.asarray([1.0*(np.array(list(arg)) == self.nm)]*l)
         # Otherwise, assume arg was a scalar; again the derivative is 1
-        return 1.0
+        return np.asarray([1.0]*l)
 
     def __call__(self, arg=None):
         """Make variables callable like functions"""
