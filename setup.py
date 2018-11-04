@@ -15,7 +15,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/CS207-Final-Project-Group-10/cs207-FinalProject",
     tests_require=["pytest"],
-    packages=['fluxions']
+    packages=['fluxions'],
     install_requires=['numpy==1.15.2'],
     classifiers=[
         "Programming Language :: Python :: 3",
