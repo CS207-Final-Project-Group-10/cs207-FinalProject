@@ -94,8 +94,14 @@ class Unop(Fluxion):
     """Abstract class embodying a unary operation"""
     def __init__(self, f):
         self.f = f
+        
+    def set_var_name(self, nm: str):
+        """Set the name of the single input variable to this unary operation."""
+        self.set_var_names(nm)
+
 
 class Const(Unop):
+    """A function returning a constant; floats are implicitly promoted to instances of Const"""
     def __init__(self, a):
         self.a = a
 
@@ -110,7 +116,9 @@ class Const(Unop):
         return f'Const({self.a})'
 
 class Var(Unop):
-    def __init__(self, nm, initial_value=None):
+    """Class embodying the concept of a variable that is an input to a function"""
+    def __init__(self, nm: str, initial_value=None):
+        """Variables must be instantiated with a name; binding an initial value is optional"""
         # The name of this variable
         self.nm = nm
         # The initial value of this variable
@@ -159,6 +167,7 @@ class Var(Unop):
     def __repr__(self):
         return f'Var({self.nm}, {self.x})'
 
+
 # *************************************************************************************************
 class Binop(Fluxion):
     """Abstract class embodying a binary operation"""
@@ -173,6 +182,7 @@ class Binop(Fluxion):
         return self.val(args), self.diff(args)
 
 class Addition(Binop):
+    """Addition (sum) of two fluxions; h = f + g"""
     def val(self, args=None):
         # (f+g)(x) = f(x) + g(x)
         return self.f.val(args) + self.g.val(args)
@@ -185,6 +195,7 @@ class Addition(Binop):
         return f'Addition({str(self.f)}, {str(self.g)})'
 
 class Subtraction(Binop):
+    """Subtraction (difference) of two fluxions; h = f - g"""
     def val(self, args=None):
         # (f-g)(x) = f(x) - g(x)
         return self.f.val(args) - self.g.val(args)
@@ -197,6 +208,7 @@ class Subtraction(Binop):
         return f'Subtraction({str(self.f)}, {str(self.g)})'
 
 class Multiplication(Binop):
+    """Multiplication (product) of two fluxions; h = f * g"""
     def val(self, args=None):
         # (f*g)(x) = f(x) * g(x)
         return self.f.val(args) * self.g.val(args)
@@ -231,6 +243,7 @@ class Multiplication(Binop):
         return f'Multiplication({str(self.f)}, {str(self.g)})'
 
 class Division(Binop):
+    """Division (quotient) of two fluxions; h = f * g"""
     def val(self, args=None):
         #(f/g)(x) = f(x) / g(x)
         return self.f.val(args) / self.g.val(args)
@@ -270,9 +283,24 @@ class Division(Binop):
     def __repr__(self):
         return f'Division({str(self.f)}, {str(self.g)})'
 
-if __name__ == "__main__":
-    # Examples
 
+class Composition(Binop):
+    """Composition of two functions; h = f(g) """
+    def val(self, args=None):
+        #(f(g))(x) = f( g(x))
+        return self.f.val(self.g.val(args))
+    
+    def diff(self, args=None):
+        # Chain rule of calculus
+        # (f(g))'(x) = f'( g(x))
+        return self.f.diff(self.g.val(args)) * self.g.diff(args)
+
+
+# *************************************************************************************************
+if __name__ == "__main__":
+    # Just a few easy test cases here
+    # The main test cases are in the test directory.
+    
     # Create a variable, x
     x = Var('x', 1.0)
 
