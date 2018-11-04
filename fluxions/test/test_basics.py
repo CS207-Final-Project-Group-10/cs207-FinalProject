@@ -2,16 +2,6 @@ import pytest
 import numpy as np
 import sys
 
-# # If this file is being run as a script (__main__), need to update the Python path so it can import fluxions
-# if __name__ == '__main__':
-#     # Use the __init__ file in this directory to set the path so this runs from the command line
-#     import __init__ as init
-#     init.set_path()
-#     # Now ready to import fluxions - it will be on the search path
-#     import fluxions as fl
-# else:
-#     # If this file is being run from the parent directory by pytest, use this import syntax instead
-#     from fluxions import fluxions as fl
 import fluxions as fl
 
 # *************************************************************************************************
