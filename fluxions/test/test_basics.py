@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 # Use the __init__ file in this directory to set the path so this runs from the command line
 #import __init__ as init
