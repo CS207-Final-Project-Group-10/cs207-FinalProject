@@ -65,7 +65,7 @@ class Fluxion:
         """Associate a Fluxion with an ordered list of variable names."""
         if isinstance(var_names, str):
             self.var_names = [var_names]
-        elif isinstance(var_names, List[str]):
+        elif isinstance(var_names, list):
             self.var_names = var_names
         else:
             raise TypeError('var_names must be a string or a list of strings')
