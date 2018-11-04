@@ -137,6 +137,7 @@ class Var(Unop):
         # If no argument is passed, the derivative of f(x) = x is 1
         if arg is None:
             return 1
+        #if the arg was a scalar, it will not have a length
         try:
             l = len(arg[self.nm])
         except(TypeError):
@@ -204,7 +205,27 @@ class Multiplication(Binop):
         # Product Rule of calculus
         # https://en.wikipedia.org/wiki/Product_rule#Examples
         # (f*g)'(x) = f'(x) + g(x) + f(x)*g'(x)
-        return self.f.val(args) * self.g.diff(args) + self.f.diff(args) * self.g.val(args)
+        #return self.f.val(args) * self.g.diff(args) + self.f.diff(args) * self.g.val(args)
+        fval = self.f.val(args)
+        gval = self.g.val(args)
+        fdiff = self.f.diff(args)
+        gdiff = self.g.diff(args)
+        if np.linalg.norm(fval) == 0 or np.linalg.norm(gdiff) == 0:
+            fval = 0
+            gdiff = 0
+        if np.linalg.norm(gval) == 0 or np.linalg.norm(fdiff) == 0:
+            fdiff = 0
+            gval = 0
+        try:
+            return fval * gdiff + fdiff * gval
+        except (ValueError):
+            leftsum = np.zeros(np.shape(gdiff))
+            for i, (f,g) in enumerate(zip(fval,gdiff)):
+                leftsum[i]=f*g
+            rightsum = np.zeros(np.shape(fdiff))
+            for i, (f,g) in enumerate(zip(fdiff,gval)):
+                rightsum[i]=f*g
+            return leftsum + rightsum
 
     def __repr__(self):
         return f'Multiplication({str(self.f)}, {str(self.g)})'
@@ -230,6 +251,7 @@ if __name__ == "__main__":
 
     # Create a variable, x
     x = Var('x', 1.0)
+
     # f(x) = 5x
     f1 = 5 * x
     f1.set_var_names('x')
@@ -240,14 +262,12 @@ if __name__ == "__main__":
     assert(f1.val({'x':2}) == 10)
     assert(f1.diff({'x':2}) == 5)
     
-
     # f(x) = 1 + (x * x)
     f2 = 1 + x * x
     f2.set_var_names('x')
     assert(f2(4.0) == (17.0, 8.0))
     assert(f2.val({'x':2}) == 5)
     assert(f2.diff({'x':3}) == 6)  
-    # x.set_val=1
 
     # f(x) = (1 + x)/(x * x) 
     f3 = (1 + x) / (x * x)
