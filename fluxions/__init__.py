@@ -1,1 +1,1 @@
-__all__ = ['Fluxion', 'Var']
+__all__ = ['fluxions']

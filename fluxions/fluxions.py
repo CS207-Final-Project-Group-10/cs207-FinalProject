@@ -280,6 +280,7 @@ if __name__ == "__main__":
     f1 = 5 * x
     f1.set_var_names('x')
     # Evaluate f1(x) at the bound value of x
+    assert(f1() == (5.0, 5.0))
     # Evaluate f1(x) using function calling syntax
     assert(f1(2) == (10.0, 5.0))
     # Evaluate f1(x) using dictionary binding syntax

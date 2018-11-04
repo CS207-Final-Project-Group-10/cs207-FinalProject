@@ -1,11 +1,16 @@
 import pytest
 import numpy as np
 
-# Use the __init__ file in this directory to set the path so this runs from the command line
-#import __init__ as init
-#init.set_path()
-# Now ready to import fluxions - it will be on the search path
-from fluxions import fluxions as fl
+# If this file is being run as a script (__main__), need to update the Python path so it can import fluxions
+if __name__ == '__main__':
+    # Use the __init__ file in this directory to set the path so this runs from the command line
+    import __init__ as init
+    init.set_path()
+    # Now ready to import fluxions - it will be on the search path
+    import fluxions as fl
+else:
+    # If this file is being run from the parent directory by pytest, use this import syntax instead
+    from fluxions import fluxions as fl
 
 
 # *************************************************************************************************
@@ -13,7 +18,7 @@ def test_basic_usage():
     # Create a variable, x
     x = fl.Var('x', 1.0)
 
-    # f(x) = 5x
+    # f1(x) = 5x
     f1 = 5 * x
     f1.set_var_names('x')
     # Evaluate f1(x) at the bound value of x
@@ -23,20 +28,20 @@ def test_basic_usage():
     assert(f1.val({'x':2}) == 10)
     assert(f1.diff({'x':2}) == 5)
 
-    # f(x) = 1 + (x * x)
+    # f2(x) = 1 + (x * x)
     f2 = 1 + x * x
     f2.set_var_names('x')
     assert(f2(4.0) == (17.0, 8.0))
     assert(f2.val({'x':2}) == 5)
     assert(f2.diff({'x':3}) == 6)
 
-    # f(x) = (1 + x)/(x * x)
+    # f3(x) = (1 + x)/(x * x)
     f3 = (1 + x) / (x * x)
     f3.set_var_names('x')
     assert(f3.val({'x':2}) == 0.75)
     assert(f3.diff({'x':2}) == -0.5)
 
-    # f(x) = (1 + 5x)/(x * x)
+    # f4(x) = (1 + 5x)/(x * x)
     f4 = (1 + 5 * x) / (x * x)
     f4.set_var_names('x')
     assert(f4.val({'x':2}) == 2.75)
@@ -47,12 +52,12 @@ def test_basic_usage():
     xs = np.linspace(0,1,num=n)
     ys = np.linspace(1,2,num=n)
 
-    # f(x) = 5x
-    f_x = 5 * fl.Var('x')
-    assert(f_x.val({'x':xs}) == 5*xs).all()
-    assert(f_x.diff({'x':xs}) == 5.0*np.ones(np.shape(xs))).all()
+    # f1(x) = 5x
+    f1 = 5 * fl.Var('x')
+    assert(f1.val({'x':xs}) == 5*xs).all()
+    assert(f1.diff({'x':xs}) == 5.0*np.ones(np.shape(xs))).all()
 
-    # f(x) = 1 + (x * x)
+    # f2(x) = 1 + (x * x)
     f_x = 1 + fl.Var('x') * fl.Var('x')
     assert(f_x.val({'x':xs}) == 1 + np.power(xs,2)).all()
     assert(f_x.diff({'x':xs}) == 2.0*xs).all()
