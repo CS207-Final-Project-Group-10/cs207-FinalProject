@@ -56,6 +56,14 @@ def test_basic_usage():
     assert(f4.val({'x':2}) == 2.75)
     assert(f4.diff({'x':2}) == -1.5)
 
+    # Take a power
+    f5 = fl.Power(x, 2)
+    f5.set_var_names('x')
+    assert(f5.val(8) == 64)
+    assert(f5.diff(8) == 16)
+    assert(f5.val(8, 3) == 512)
+    assert(f5.diff(8, 3) == 3*64)    
+
     # Report results
     report_success()
 

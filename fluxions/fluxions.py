@@ -1,5 +1,8 @@
 import numpy as np
 from typing import List, Tuple, Dict, Union
+# Type alias for a value_type; this is an integer, float, or a numpy array
+value_type = Union[int, float, np.ndarray]
+
 
 class Fluxion:
     """A Fluxion embodies a differentiable function"""
@@ -92,7 +95,7 @@ class Fluxion:
 # *************************************************************************************************
 class Unop(Fluxion):
     """Abstract class embodying a unary operation"""
-    def __init__(self, f):
+    def __init__(self, f: Fluxion):
         self.f = f
         
     def set_var_name(self, nm: str):
@@ -102,8 +105,9 @@ class Unop(Fluxion):
 
 class Const(Unop):
     """A function returning a constant; floats are implicitly promoted to instances of Const"""
-    def __init__(self, a):
-        self.a = a
+    def __init__(self, a: Union[float, int]):
+        # Promote an integer to a float if necessary
+        self.a = float(a)
 
     def val(self, arg=None):
         return self.a
@@ -124,7 +128,7 @@ class Var(Unop):
         # The initial value of this variable
         self.x = initial_value
 
-    def set_val(self, x):
+    def set_val(self, x: value_type):
         """Set the value of this variable"""
         self.x = x
 
@@ -144,7 +148,7 @@ class Var(Unop):
         """The diff method of a variable returns a 1 """
         # If no argument is passed, the derivative of f(x) = x is 1
         if arg is None:
-            return 1
+            return 1.0
         #if the arg was a scalar, it will not have a length
         try:
             l = len(arg[self.nm])
@@ -168,10 +172,29 @@ class Var(Unop):
         return f'Var({self.nm}, {self.x})'
 
 
+class Power(Unop):
+    """Raise a fluxion to the power p"""
+    def __init__(self, f: Fluxion, p: float = 0.0):
+        self.f = f
+        self.p = p
+    
+    def val(self, arg=None, p: float = None):
+        if p is None:
+            p = self.p
+        return self.f.val(arg)**p
+
+    def diff(self, arg=None, p: float = None):
+        if p is None:
+            p = self.p
+        return p * self.f.val(arg)**(p-1)
+    
+    def __repr__(self):
+        return f'Power({self.f.nm}, {self.p})'
+
 # *************************************************************************************************
 class Binop(Fluxion):
     """Abstract class embodying a binary operation"""
-    def __init__(self, f, g):
+    def __init__(self, f: Fluxion, g: Fluxion):
         f.is_node()
         g.is_node()
         self.f = f
