@@ -240,8 +240,32 @@ class Division(Binop):
         # https://en.wikipedia.org/wiki/Quotient_rule
         # f(x) = g(x) / h(x),
         # f'(x) = (g('x)h(x) - g(x)h'(x)) / h(x)^2
-        return (self.f.diff(args) * self.g.val(args) - self.f.val(args) * self.g.diff(args)) / \
-                (self.g.val(args) * self.g.val(args))
+        fval = self.f.val(args)
+        gval = self.g.val(args)
+        fdiff = self.f.diff(args)
+        gdiff = self.g.diff(args)
+        if np.linalg.norm(fval) == 0 or np.linalg.norm(gdiff) == 0:
+            fval = 0
+            gdiff = 0
+        if np.linalg.norm(gval) == 0 or np.linalg.norm(fdiff) == 0:
+            fdiff = 0
+            gval = 0
+        try:
+            return (fdiff * gval - fval * gdiff) / \
+                    (gval * gval)
+        except (ValueError):
+            leftsum = np.zeros(np.shape(gdiff))
+            for i, (f,g) in enumerate(zip(fdiff,gval)):
+                leftsum[i]=f*g
+            rightsum = np.zeros(np.shape(fdiff))
+            for i, (f,g) in enumerate(zip(fval,gdiff)):
+                rightsum[i]=f*g
+            numerator = leftsum - rightsum
+            denominator = np.power(gval,2)
+            quotient = np.zeros(np.shape(numerator))
+            for i, (n,d) in enumerate(zip(numerator,denominator)):
+                quotient[i]=n/d
+            return quotient
 
     def __repr__(self):
         return f'Division({str(self.f)}, {str(self.g)})'

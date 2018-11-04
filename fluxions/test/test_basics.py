@@ -109,6 +109,16 @@ def test_basic_usage():
     assert(f_xyz.val({'x':xs,'y':xs,'z':xs}) == 3*xs + 2*xs + xs).all()
     assert(f_xyz.diff({'x':xs,'y':xs,'z':xs}) == np.asarray([np.array([3, 2, 1])]*50)).all()
 
+    # f(x,y,z) = (3x+2y+z)/xyz
+    xs = np.linspace(0,1)
+    f_xyz = (3 * fl.Var('x') + 2 * fl.Var('y') + fl.Var('z'))/(fl.Var('x') * fl.Var('y') * fl.Var('z'))
+    assert(f_xyz.val({'x':1,'y':1,'z':1}) == 6)
+    assert(f_xyz.diff({'x':1,'y':1,'z':1}) == np.array([-3., -4., -5.])).all()
+    assert(f_xyz.val({'x':ys,'y':ys,'z':ys}) == (3*ys + 2*ys + ys)/(ys*ys*ys)).all()
+    assert (np.linalg.norm(f_xyz.diff({'x':ys,'y':ys,'z':ys}) \
+                           -np.transpose([-3*ys/np.power(ys,4), -4*ys/np.power(ys,4), -5*ys/np.power(ys,4)])) < 10**(-14))
+
+
 # Run the test
 test_basic_usage()
 # Report results
