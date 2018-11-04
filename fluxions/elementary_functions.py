@@ -1,6 +1,5 @@
 import numpy as np
 from numpy import pi
-import sys
 from fluxions import Fluxion, Unop, Var
 
 from typing import List, Callable, Union
@@ -162,6 +161,7 @@ radians = differentiable_function(np.radians, _deriv_deg2rad, 'radians', 'x')
 
 # *************************************************************************************************
 # Hyperbolic functions
+# https://en.wikipedia.org/wiki/Hyperbolic_function
 # sinh(x)
 # cosh(x)
 # tanh(x)
@@ -169,6 +169,40 @@ radians = differentiable_function(np.radians, _deriv_deg2rad, 'radians', 'x')
 # arccosh(x)
 # arctanh(x)
 
+# The derivative of sinh(x) is cosh(x)
+sinh = differentiable_function(np.sinh, np.cosh, 'sinh', 'x')
+
+# The derivative of cosh(x) is sinh(x)
+cosh = differentiable_function(np.cosh, np.sinh, 'cosh', 'x')
+
+# The derivative of tanh(x) is 1 / cosh^2(x)
+def _deriv_tanh(x):
+    """Derivative of tanh(x)"""
+    cx = np.cosh(x)
+    return 1.0 / cx * cx
+
+tanh = differentiable_function(np.tanh, _deriv_tanh, 'tanh', 'x')
+
+# The derivative of arcsinh is 1 / sqrt(x^2+1)
+def _deriv_arcsinh(x):
+    """The derivative of arcsinh(x)"""
+    return 1.0 / np.sqrt(x*x + 1)
+
+arcsinh = differentiable_function(np.arcsinh, _deriv_arcsinh, 'arcsinh', 'x')
+
+# The derivative of arccosh is 1 / sqrt(x^2-1); only exists for 1 < x
+def _deriv_arccosh(x):
+    """The derivative of arccosh(x)"""
+    return 1.0 / np.sqrt(x*x - 1)
+
+arccosh = differentiable_function(np.arccosh, _deriv_arccosh, 'arccosh', 'x')
+
+# The derivative of arctanh is 1 / (1-x^2); only exists for -1 < x < 1
+def _deriv_arctanh(x):
+    """The derivative of arctanh(x)"""
+    return 1.0 / (1.0 - x*x)
+
+arctanh = differentiable_function(np.arctanh, _deriv_arctanh, 'arctanh', 'x')
 
 # *************************************************************************************************
 # Rounding functions are NOT differentiable! Skip these...
@@ -194,14 +228,61 @@ radians = differentiable_function(np.radians, _deriv_deg2rad, 'radians', 'x')
 # The derivative of exp(x) is exp(x)
 exp = differentiable_function(np.exp, np.exp, 'exp', 'x')
 
+# The derivative of f(x) = exp(x) - 1 is exp(x)
+expm1 = differentiable_function(np.expm1, np.exp, 'exp', 'x')
+
+# The derivative of exp2(x) = 2^x is log(2) * 2^x
+_log2 = np.log(2.0)
+def _deriv_exp2(x):
+    """The derivative of exp2(x)"""
+    return _log2 * np.exp2(x)
+
+exp2 = differentiable_function(np.exp2, _deriv_exp2, 'exp2', 'x')
+
+# The derivative of log(x) is 1/x
+# Use this hand-rolled function because the numpy reciprocal function doesn't handle integers well
 def _recip(x):
     """Return the reciprocal of x; to be used as the derivative of log(x)"""
     return 1.0 / x
 
-# The derivative of log(x) is 1/x
 log = differentiable_function(np.log, _recip, 'log', 'x')
 
+# The derivative of log10(x) is (1 / log(10) * 1 / x
+_log10 = np.log(10.0)
+def _deriv_log10(x):
+    """The derivative of log10(x)"""
+    return 1.0 / (_log10 * x)
 
+log10 = differentiable_function(np.log10, _deriv_log10, 'log10', 'x')
+
+
+# The derivative of log2(x) is (1 / log(2) * 1 / x
+def _deriv_log2(x):
+    """The derivative of log2(x)"""
+    return 1.0 / (_log2 * x)
+
+log2 = differentiable_function(np.log2, _deriv_log2, 'log2', 'x')
+
+def _deriv_logaddexp(x1, x2):
+    """The derivative of f(x, y) = log(e^x + e^y)"""
+    y1 = np.exp(x1)
+    y2 = np.exp(x2)
+    df_dx1 = y1 / (y1 + y2)
+    df_dx2 = y2 / (y1 + y2)
+    return np.vstack([df_dx1, df_dx2]).T
+
+logaddexp = differentiable_function(np.logaddexp, _deriv_logaddexp, 'logaddexp', '[x1, x2]')
+
+
+def _deriv_logaddexp2(x1, x2):
+    """The derivative of f(x, y) = log2(2^x + 2^y)"""
+    y1 = np.exp2(x1)
+    y2 = np.exp2(x2)
+    df_dx1 = y1 / (y1 + y2)
+    df_dx2 = y2 / (y1 + y2)
+    return np.vstack([df_dx1, df_dx2]).T
+
+logaddexp2 = differentiable_function(np.logaddexp2, _deriv_logaddexp2, 'logaddexp2', '[x1, x2]')
 
 
 # *************************************************************************************************
@@ -219,4 +300,6 @@ assert dy_dx == np.cos(2)
 y, dy_dx = sin(theta)
 assert np.all(y == np.sin(theta_val))
 assert np.all(dy_dx == np.cos(theta_val))
+
+print('Testing of differentiable functions for f(x) = sin(x):   **** PASS ****')
 
