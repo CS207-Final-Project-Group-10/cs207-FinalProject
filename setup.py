@@ -1,12 +1,9 @@
 from setuptools import setup, find_packages
 
-setup(name="fluxions", packages=find_packages())
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-
     name="fluxions",
     version="0.0.2",
     author="Harvard CS207 Final Project Group 10",
