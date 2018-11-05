@@ -11,19 +11,17 @@ Our package is available on Test PyPI. Before installing ensure you have a Pytho
 
 If you are using a Mac you can setup an appropriate virtual environment in your desired directory as follows:
 
-```python
-# Execute the following in the directory you want to create the virtual environment
+```console
 pip3 install virtualenv
 virtualenv -p python3 venv
 source venv/bin/activate
 
-# fluxions requires numpy to be installed
 pip3 install numpy
 ```
 
 Once you have an appropriate environment set up, you can install the fluxions package with the following command:
 
-```python
+```console
 pip3 install --index-url https://test.pypi.org/simple/ fluxions
 ```
 ### How to install (for developers)?
@@ -32,8 +30,7 @@ Clone the git repository to a location of your choice. The repository is located
 
 Ensure you have a Python3 environment available. If you want to use a virtual environment then execute the following code in the cloned directory.
 
-```python
-# Execute the following in the directory you want to create the virtual environment
+```console
 pip3 install virtualenv
 virtualenv -p python3 venv
 source venv/bin/activate
@@ -41,7 +38,7 @@ source venv/bin/activate
 
 Finally install the requirements
 
-```python
+```console
 pip3 install -r requirements.txt
 ```
 
@@ -54,7 +51,7 @@ pytest fluxions/
 
 The intended way of using the fluxions package is by only accessing values that are exposed at the package level.
 
-Consider importing it as follows:
+Consider importing the fluxions package as follows:
 
 ```python
 import fluxions as fl
