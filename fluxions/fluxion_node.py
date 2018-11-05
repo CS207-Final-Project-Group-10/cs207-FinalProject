@@ -85,8 +85,8 @@ class Fluxion:
     def __call__(self, *args):
         """Make Fluxion object callable like functions"""
         argc: int = len(args)
-        print(f'In Fluxion.__call__()')
-        print(f'argc={argc}, args={args}')
+        # print(f'In Fluxion.__call__()')
+        # print(f'argc={argc}, args={args}')
         # If argc == 0, proceed on the basis that the function has input variables with bound values
         if argc == 0:
             return self.val(), self.diff()
@@ -97,7 +97,7 @@ class Fluxion:
             # Proceed on the basis that the function was called with argument by value
             # Bind arguments into a variable table
             var_tbl = self.bind_args(*args)
-        print(f'Variable Table: {var_tbl}')
+        # print(f'Variable Table: {var_tbl}')
         return self.val(var_tbl), self.diff(var_tbl)
         
 
@@ -223,8 +223,8 @@ class Binop(Fluxion):
     def __call__(self, *args):
         """Make binary operations callable like functions"""
         argc: int = len(args)
-        print(f'In Binop.__call__()')
-        print(f'argc={argc}, args={args}')
+        # print(f'In Binop.__call__()')
+        # print(f'argc={argc}, args={args}')
         # If argc == 0, proceed on the basis that the function has input variables with bound values
         if argc == 0:
             return self.val(), self.diff()
@@ -235,7 +235,7 @@ class Binop(Fluxion):
             # Proceed on the basis that the function was called with argument by value
             # Bind arguments into a variable table
             var_tbl = self.bind_args(*args)
-        print(f'Variable Table: {var_tbl}')
+        # print(f'Variable Table: {var_tbl}')
         return self.val(var_tbl), self.diff(var_tbl)
 
 class Addition(Binop):
