@@ -33,6 +33,7 @@ def test_basic_usage():
     # Evaluate f1(x) using dictionary binding syntax
     assert(f1.val({'x':2}) == 10)
     assert(f1.diff({'x':2}) == 5)
+    assert repr(f1) == "Multiplication(Var(x, 1.0), Const(5.0))"
 
     # f2(x) = 1 + (x * x)
     f2 = 1 + x * x
@@ -66,10 +67,10 @@ def test_basic_usage():
     assert a.is_node()
 
     #check subtraction and division
-    f3 = (1 - x + 1 - 1) / ((x * x)/1)
-    f3.set_var_names('x')
-    assert(f3.val({'x':2}) == -0.25)
-    assert(f3.diff({'x':2}) == 0)
+    f7 = (1 - x + 1 - 1) / ((x * x)/1)
+    f7.set_var_names('x')
+    assert(f7.val({'x':2}) == -0.25)
+    assert(f7.diff({'x':2}) == 0)
 
     # Report results
     report_success()
@@ -141,7 +142,7 @@ def test_basics_vectors():
     assert(f7.diff(var_tbl_vector) == np.asarray([np.array([3, 2, 1])]*50)).all()
 
     # f(x,y,z) = (3x+2y+z)/xyz
-    f8 = (3 * x + 2 * y + z)/(x * y * z)
+    f8 = (x * 3 + 2 * y + z)/(x * y * z)
     f8.set_var_names(['x', 'y', 'z'])
     assert(f8.val(var_tbl_scalar) == 6)
     assert(f8.diff(var_tbl_scalar) == np.array([-3., -4., -5.])).all()
