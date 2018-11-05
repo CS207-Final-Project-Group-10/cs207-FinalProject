@@ -156,7 +156,7 @@ class Var(Unop):
         # Otherwise, assume arg was the value to be passed
         return arg
 
-    def diff(self, arg=None):
+    def diff(self, arg=None, seed_tbl=None):
         """The diff method of a variable returns a 1 """
         # If no argument is passed, the derivative of f(x) = x is 1
         if arg is None:
@@ -168,11 +168,19 @@ class Var(Unop):
             l = 1
         # If argument was a dictionary, look up to set 1s where the variable name is matched
         if isinstance(arg, dict):
-            # If the variable table has length 1, return a scalar rather than an array of length 1
-            if len(arg) == 1:
-                return np.asarray([1.0]*l) if self.nm in arg else np.asarray([1.0]*l)
+            # If seed_tbl was a dictionary, look up the seed value where the variable name is matched
+            if isinstance(seed_tbl, dict):
+                # If the variable table has length 1, return a scalar rather than an array of length 1
+                if len(arg) == 1:
+                    return np.asarray([seed_tbl(self.nm)]*l) if self.nm in arg else np.asarray([0.0]*l)
+                else:
+                    return np.asarray([seed_tbl(self.nm)*(np.array(list(arg)) == self.nm)]*l)
             else:
-                return np.asarray([1.0*(np.array(list(arg)) == self.nm)]*l)
+                # If the variable table has length 1, return a scalar rather than an array of length 1
+                if len(arg) == 1:
+                    return np.asarray([1.0]*l) if self.nm in arg else np.asarray([0.0]*l)
+                else:
+                    return np.asarray([1.0*(np.array(list(arg)) == self.nm)]*l)
         # Otherwise, assume arg was a scalar; again the derivative is 1
         return np.asarray([1.0]*l)
 
