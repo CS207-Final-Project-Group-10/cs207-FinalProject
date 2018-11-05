@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2018 [fullname]
+Copyright (c) 2018 William C. Burke, Nathan Einstein, Michael S. Emanuel, Daniel Inge
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
