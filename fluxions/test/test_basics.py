@@ -59,7 +59,17 @@ def test_basic_usage():
     assert(f5.val(8) == 64)
     assert(f5.diff(8) == 16)
     assert(f5.val(8, 3) == 512)
-    assert(f5.diff(8, 3) == 3*64)    
+    assert(f5.diff(8, 3) == 3*64)
+
+    #check assignment
+    a = fl.Fluxion()
+    assert a.is_node()
+
+    #check subtraction and division
+    f3 = (1 - x + 1 - 1) / ((x * x)/1)
+    f3.set_var_names('x')
+    assert(f3.val({'x':2}) == -0.25)
+    assert(f3.diff({'x':2}) == 0)
 
     # Report results
     report_success()
