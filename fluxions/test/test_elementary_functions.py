@@ -17,7 +17,7 @@ def report_success():
     test_name = sys._getframe(1).f_code.co_name
     print(f'{test_name:25}: **** PASS ****')
 
-def test_basic_elementary_functions():     
+def test_elementary_functions():
     # Create a variable theta with angles from 0 to 360 degrees, with values in radians
     theta_val = np.linspace(0, 2*np.pi, 361)
     theta = fl.Var('theta', theta_val)
@@ -33,3 +33,6 @@ def test_basic_elementary_functions():
     assert np.all(dy_dx == np.cos(theta_val))
 
     report_success()
+    
+
+test_elementary_functions()

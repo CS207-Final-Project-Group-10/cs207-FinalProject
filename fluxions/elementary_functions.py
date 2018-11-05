@@ -26,20 +26,27 @@ class differentiable_function(Unop):
         self.set_var_names(var_names)
 
     def val(self, arg):        
-        try:
+        if isinstance(arg, Fluxion):
             # If the argument was a fluxion, run the val() method on it, then evaluate the function
-            return self.func(arg.val())
-        except:
+            # print(f'In differentiable_function.val(), arg={arg}')
+            arg_value = arg.val()
+            # print(f'Evaluated argument = {arg_value}')
+            return self.func(arg_value)
+        else:
             # If the argument was a value type, evaluate the function
             return self.func(arg)
 
     def diff(self, arg):
-        try:
-            # If the argument was a fluxion, run the val() method on it, then evaluate the derivative
-            # *then* apply the chain rule!
-            return self.deriv(arg.val()) * arg.diff()
-        except:
-            # If the argument was a value type, evaluate the derivative
+        if isinstance(arg, Fluxion):
+            # If the argument was a fluxion, run the val() method on it, then evaluate the function
+            # print(f'In differentiable_function.val(), arg={arg}')
+            arg_value = arg.val()
+            arg_diff = arg.diff()
+            # print(f'Evaluated argument = {arg_value}')
+            # print(f'Evaluated argument derivative = {arg_diff}')
+            return self.deriv(arg_value) * arg_diff
+        else:
+            # If the argument was a value type, evaluate the function
             return self.deriv(arg)
 
     def __repr__(self):

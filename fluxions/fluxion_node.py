@@ -83,12 +83,21 @@ class Fluxion:
         return var_tbl
 
     def __call__(self, *args):
-        """Make Fluxion object callable like a function"""
-        # print(f'In Fluxion.__call__()')
-        # print(f'args={args}')
-        # Bind arguments into a variable table
-        var_tbl = self.bind_args(*args)
-        # print(f'Variable Table: {var_tbl}')
+        """Make Fluxion object callable like functions"""
+        argc: int = len(args)
+        print(f'In Fluxion.__call__()')
+        print(f'argc={argc}, args={args}')
+        # If argc == 0, proceed on the basis that the function has input variables with bound values
+        if argc == 0:
+            return self.val(), self.diff()
+        # If argc == 1 and arg is a dictionary, proceed on the basis that the function was called with a dictionary
+        if argc == 1 and isinstance(args[0], dict):
+            var_tbl = args[0]
+        elif argc == len(self.var_names):
+            # Proceed on the basis that the function was called with argument by value
+            # Bind arguments into a variable table
+            var_tbl = self.bind_args(*args)
+        print(f'Variable Table: {var_tbl}')
         return self.val(var_tbl), self.diff(var_tbl)
         
 
@@ -136,7 +145,10 @@ class Var(Unop):
         """The diff method of a variable returns its value"""
         # If no argument is passed, used the stored value
         if arg is None:
-            return self.x
+            if self.x is not None:
+                return self.x
+            else:
+                raise RuntimeError(f'Logic error: tried to evaluate an unbound variable {self.nm}!')
         # If argument is a dictionary containing this variable name, 
         # assume it was passed in dictionary  (var_tbl) format and look it up by name
         if isinstance(arg, dict) and self.nm in arg:
@@ -200,9 +212,23 @@ class Binop(Fluxion):
         self.f = f
         self.g = g
 
-    def __call__(self, args=None):
+    def __call__(self, *args):
         """Make binary operations callable like functions"""
-        return self.val(args), self.diff(args)
+        argc: int = len(args)
+        print(f'In Binop.__call__()')
+        print(f'argc={argc}, args={args}')
+        # If argc == 0, proceed on the basis that the function has input variables with bound values
+        if argc == 0:
+            return self.val(), self.diff()
+        # If argc == 1 and arg is a dictionary, proceed on the basis that the function was called with a dictionary
+        if argc == 1 and isinstance(args[0], dict):
+            var_tbl = args[0]
+        elif argc == len(self.var_names):
+            # Proceed on the basis that the function was called with argument by value
+            # Bind arguments into a variable table
+            var_tbl = self.bind_args(*args)
+        print(f'Variable Table: {var_tbl}')
+        return self.val(var_tbl), self.diff(var_tbl)
 
 class Addition(Binop):
     """Addition (sum) of two fluxions; h = f + g"""
