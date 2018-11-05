@@ -1,8 +1,17 @@
-import fluxions as fl
-import pytest
 import numpy as np
 import sys
+import os
+# Handle import of module fluxions differently if module
+# module is being loaded as __main__ or a module in a package.
+if __name__ == '__main__':
+    cwd = os.getcwd()
+    os.chdir('../..')
+    import fluxions as fl
+    os.chdir(cwd)
+else:
+    import fluxions as fl
 
+# *************************************************************************************************
 def report_success():
     """Report that a test was successful"""
     test_name = sys._getframe(1).f_code.co_name
