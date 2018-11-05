@@ -26,7 +26,7 @@ class differentiable_function(Unop):
         self.set_var_names(var_names)
 
     def val(self, arg):        
-        if isinstance(arg, Fluxion):
+        if hasattr(arg, 'val'):
             # If the argument was a fluxion, run the val() method on it, then evaluate the function
             # print(f'In differentiable_function.val(), arg={arg}')
             arg_value = arg.val()
@@ -37,7 +37,7 @@ class differentiable_function(Unop):
             return self.func(arg)
 
     def diff(self, arg):
-        if isinstance(arg, Fluxion):
+        if hasattr(arg, 'val'):
             # If the argument was a fluxion, run the val() method on it, then evaluate the function
             # print(f'In differentiable_function.val(), arg={arg}')
             arg_value = arg.val()
