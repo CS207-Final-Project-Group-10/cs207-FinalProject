@@ -47,6 +47,7 @@ def test_basic_usage():
     f3.set_var_names('x')
     assert(f3.val({'x':2}) == 0.75)
     assert(f3.diff({'x':2}) == -0.5)
+    assert repr(f3) == "Division(Addition(Var(x, 1.0), Const(1.0)), Multiplication(Var(x, 1.0), Var(x, 1.0)))"
 
     # f4(x) = (1 + 5x)/(x * x)
     f4 = (1 + 5 * x) / (x * x)
