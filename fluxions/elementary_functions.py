@@ -1,7 +1,12 @@
 import numpy as np
-from numpy import pi
-from fluxions import Fluxion, Unop, Var
+# Handle import of classes in fluxion_node differently depending on whether this
+# module is being loaded as __main__ or a module in a package.
+if __name__ == '__main__':
+    from fluxion_node import Fluxion, Unop
+else:
+    from fluxions import Fluxion, Unop
 
+# Types and type aliases
 from typing import List, Callable, Union
 value_type = Union[int, float, np.ndarray]
 function_arg = Union[value_type, Fluxion]
