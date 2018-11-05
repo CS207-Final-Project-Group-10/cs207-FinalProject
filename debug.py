@@ -1,4 +1,5 @@
 # from fluxion_node import Fluxion, Unop
+import numpy as np
 import fluxions as fl
 from fluxions import Fluxion, Var, differentiable_function, sin
 
@@ -18,3 +19,7 @@ assert ans_dict[0] == 6
 
 # f = sin(x * y)
 f = sin(f1)
+
+theta_val = np.linspace(0, 2*np.pi, 361)
+theta = fl.Var('theta', theta_val)
+Cos = fl.cos(theta)

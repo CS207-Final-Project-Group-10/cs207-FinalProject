@@ -343,6 +343,14 @@ class Division(Binop):
 
 class Composition(Binop):
     """Composition of two functions; h = f(g) """
+    def __init__(self, f: Fluxion, g: Fluxion):
+        self.f = f
+        self.g = g
+        if hasattr(g, 'var_names'):
+            self.set_var_names(g.var_names)
+        elif hasattr(g, 'nm'):
+            self.set_var_names(g.nm)
+
     def val(self, args=None):
         #(f(g))(x) = f( g(x))
         return self.f.val(self.g.val(args))
