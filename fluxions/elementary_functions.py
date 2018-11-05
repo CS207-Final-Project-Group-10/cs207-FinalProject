@@ -275,6 +275,14 @@ def _deriv_log2(x):
 
 log2 = differentiable_function(np.log2, _deriv_log2, 'log2', 'x')
 
+
+# The derivative of log1p(x) = log(1 +x ) = 1 / (1+x)
+def _deriv_log1p(x):
+    """The derivative of log1p(x)"""
+    return 1.0 / (1.0 + x)
+
+log1p = differentiable_function(np.log1p, _deriv_log1p, 'log1p', 'x')
+
 def _deriv_logaddexp(x1, x2):
     """The derivative of f(x, y) = log(e^x + e^y)"""
     y1 = np.exp(x1)
