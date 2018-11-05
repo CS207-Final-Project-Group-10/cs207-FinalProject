@@ -23,6 +23,12 @@ def test_basic_usage():
     # Create a variable, x
     x = fl.Var('x', 1.0)
 
+    #f0 = x - 1
+    f0 = x - 1
+    assert(f0.val({'x':1}) == 0)
+    assert(f0.diff({'x':1}) == 1)
+    assert repr(f0) == "Subtraction(Var(x, 1.0), Const(1.0))"
+
     # f1(x) = 5x
     f1 = 5 * x
     f1.set_var_names('x')
@@ -62,6 +68,7 @@ def test_basic_usage():
     assert(f5.diff(8) == 16)
     assert(f5.val(8, 3) == 512)
     assert(f5.diff(8, 3) == 3*64)
+    assert repr(f5) == "Power(x, 2)"
 
     #check assignment
     a = fl.Fluxion()
