@@ -62,7 +62,13 @@ class differentiable_inner_function(Unop):
             arg_diff = self.f.diff(arg)
             # print(f'Evaluated argument = {arg_value}')
             # print(f'Evaluated argument derivative = {arg_diff}')
-            return self.deriv(arg_value) * arg_diff
+            try:
+                return self.deriv(arg_value) * arg_diff
+            except (ValueError):
+                diffarray = np.zeros(np.shape(arg_diff))
+                for i, (f,g) in enumerate(zip(self.deriv(arg_value),arg_diff)):
+                    diffarray[i]=f*g
+                return diffarray
         else:
             # If the argument was a value type, evaluate the function
             return 0.0
