@@ -70,7 +70,25 @@ n$. Following the standard order of operations, the innermost elementary functio
 For example, if we wish to use the forward mode algorithm to differentiate $f(x) = e^{x_1}cos(2x_1 + x_2)$ at the point $x = (x_1,x_2) = (0,\pi / 2)$, and we were only interested in the derivative with respect to $x_1$ we would pass the function $f$, the vector $x$, and $dx = (1,0)$. Starting from the innermost functions, we evaluate the derivative and the value of $e^{x_1}$. The value is the scalar 1 and the derivative is a vector $(1,0)$. Moving on, we evaluate the * operator on $2x_1$, giving a value 0 and the vector (2,0). The + operator gives the value $\pi/2$ and the vector (2,0). Cosine gives the scalar 0 and the vector $(-sin(2), 0)$. Finally, the multiplication operator between $e$ and $cos$ gives $f(x) = 0$ and  $f'(x) = (-sin(2),0)$ which would be the output. Because we passed the seed value $dx = (1,0)$, $f'(x) $ has a zero in the place corresponing to $x_2$. The zero in the seed carries through to the final derivative, only returning the non-zero entries.
 
 ## Software organization
+- High-level overview of how the software is organized.
+    * Directory structure
+    * Basic modules and what they do
+    * Where do tests live?  How are they run?  How are they integrated?
+
 
 ## Implementation details
+* Implementation details
+  - Description of current implementation.  This section goes deeper than the high level software
+    organization section.
+    * Try to think about the following:
+      - Core data structures
+      - Core classes
+      - Important attributes
+      - External dependencies
+      - Elementary functions
+
 
 ## Future Plans
+  - What aspects have you not implemented yet?  What else do you plan on implementing?
+  - How will your software change?  
+  - What will be the primary challenges?
