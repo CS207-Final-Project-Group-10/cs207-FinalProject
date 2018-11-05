@@ -26,11 +26,28 @@ class differentiable_function(Unop):
         self.func_name = func_name
         self.set_var_names(var_names)
 
+    def __repr__(self):
+        return f'{self.func_name}'
+
+    def __call__(self, f):
+        return differentiable_inner_function(f,self.func,self.deriv,self.func_name,self.var_names)
+
+class differentiable_inner_function(Unop):
+
+    def __init__(self, f, func: Callable, deriv: Callable, func_name: str, var_names: Union[str, List[str]] = 'x'):
+        self.f = f
+        # Bind the function evaluation and derivative
+        self.func = func
+        self.deriv = deriv
+        # Set function name and var names
+        self.func_name = func_name
+        self.var_names = var_names
+
     def val(self, arg):        
-        if hasattr(arg, 'val'):
-            # If the argument was a fluxion, run the val() method on it, then evaluate the function
+        if isinstance(arg, dict):
+            # If the argument was a dictionary, run the val() method on the stored fluxion
             # print(f'In differentiable_function.val(), arg={arg}')
-            arg_value = arg.val()
+            arg_value = self.f.val(arg)
             # print(f'Evaluated argument = {arg_value}')
             return self.func(arg_value)
         else:
@@ -38,26 +55,20 @@ class differentiable_function(Unop):
             return self.func(arg)
 
     def diff(self, arg):
-        if hasattr(arg, 'val'):
-            # If the argument was a fluxion, run the val() method on it, then evaluate the function
+        if isinstance(arg, dict):
+            # If the argument was a dictionary, run the val() method on it
             # print(f'In differentiable_function.val(), arg={arg}')
-            arg_value = arg.val()
-            arg_diff = arg.diff()
+            arg_value = self.f.val(arg)
+            arg_diff = self.f.diff(arg)
             # print(f'Evaluated argument = {arg_value}')
             # print(f'Evaluated argument derivative = {arg_diff}')
             return self.deriv(arg_value) * arg_diff
         else:
             # If the argument was a value type, evaluate the function
-            return self.deriv(arg)
+            return 0.0
 
     def __repr__(self):
-        return f'{self.func_name}'
-
-    def __call__(self, arg):
-        val = self.val(arg)
-        diff = self.diff(arg)
-        return (val, diff)
-    
+        return f'{self.func_name}({self.f})'
 
 # *************************************************************************************************
 # List of mathematical functions in numpy

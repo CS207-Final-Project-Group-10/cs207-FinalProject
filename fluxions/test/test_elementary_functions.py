@@ -20,19 +20,18 @@ def report_success():
 def test_elementary_functions():
     # Create a variable theta with angles from 0 to 360 degrees, with values in radians
     theta_val = np.linspace(0, 2*np.pi, 361)
-    theta = fl.Var('theta', theta_val)
-
+    theta = fl.Var('theta')
+    
     # Scalar version
-    y, dy_dx = fl.sin(2)
-    assert y == np.sin(2)
-    assert dy_dx == np.cos(2)
+    f_theta = fl.sin(theta)
+    assert f_theta.val({'theta':2}) == np.sin(2)
+    assert f_theta.diff({'theta':2}) == np.cos(2)
 
     # Vector version
-    y, dy_dx = fl.sin(theta)
-    assert np.all(y == np.sin(theta_val))
-    assert np.all(dy_dx == np.cos(theta_val))
+    f_theta = fl.sin(theta)
+    assert np.all(f_theta.val({'theta':theta_val}) == np.sin(theta_val))
+    assert np.all(f_theta.diff({'theta':theta_val}) == np.cos(theta_val))
 
     report_success()
-    
 
 test_elementary_functions()
