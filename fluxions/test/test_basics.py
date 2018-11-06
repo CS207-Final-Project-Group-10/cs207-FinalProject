@@ -25,8 +25,13 @@ def test_basic_usage():
 
     #f0 = x - 1
     f0 = x - 1
-    assert(f0.val({'x':1}) == 0)
-    assert(f0.diff({'x':1}) == 1)
+    # assert(f0.val({'x':1}) == 0)
+    # assert(f0.diff({'x':1}) == 1)
+    var_tbl = {'x':1}
+    seed_tbl = {'x':1}
+    val, diff = f0.forward_mode(var_tbl, seed_tbl)
+    assert val == 0
+    assert diff == 1
     assert repr(f0) == "Subtraction(Var(x, 1.0), Const(1.0))"
 
     # f1(x) = 5x
@@ -89,7 +94,6 @@ def test_basic_usage():
     assert(c(1)==(1, np.array([1])))
 
     #check division
-    f6 = 1/x
     f6 = 1/x
     assert(f6.val({'x':1,'y':1}) == 1)
     assert(f6.diff({'x':1,'y':1}) == np.array([[-1.,  0.]])).all()
