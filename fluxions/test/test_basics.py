@@ -160,6 +160,11 @@ def test_basics_vectors():
     assert np.isclose(f8.diff(var_tbl_vector), 
                       np.transpose([-3*ys/np.power(ys,4), -4*ys/np.power(ys,4), -5*ys/np.power(ys,4)])).all()
 
+    #f(x,y) = xy
+    f9 = y*x
+    assert(f9.val({'x':0,'y':0,'z':1})==0)
+    assert(f9.diff({'x':0,'y':0,'z':1})==0)
+
     # Report results
     report_success()
 
