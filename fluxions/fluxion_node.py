@@ -172,9 +172,9 @@ class Var(Unop):
             if isinstance(seed_tbl, dict):
                 # If the variable table has length 1, return a scalar rather than an array of length 1
                 if len(arg) == 1:
-                    return np.asarray([seed_tbl(self.nm)]*l) if self.nm in arg else np.asarray([0.0]*l)
+                    return np.asarray([seed_tbl[self.nm]]*l) if self.nm in arg else np.asarray([0.0]*l)
                 else:
-                    return np.asarray([seed_tbl(self.nm)*(np.array(list(arg)) == self.nm)]*l)
+                    return np.asarray([seed_tbl[self.nm]*(np.array(list(arg)) == self.nm)]*l)
             else:
                 # If the variable table has length 1, return a scalar rather than an array of length 1
                 if len(arg) == 1:
