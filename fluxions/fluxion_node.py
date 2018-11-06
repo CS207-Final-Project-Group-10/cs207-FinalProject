@@ -67,10 +67,6 @@ class Fluxion:
         """The shape of this fluxion according to numpy standard"""
         return (self.m, self.n)
 
-    def var_names(self) -> Tuple[str]:
-        """Return the variable names as a tuple"""
-        return tuple(self.var_names_)
-
     # Set sizes
     def set_m(self, m: int) -> None:
         """Set the number of output dimensions"""
@@ -121,7 +117,7 @@ class Fluxion:
     def parse_args_val(self, *args) -> np.ndarray:
         """
         Parse input arguments used in function evaluation.
-        End result will be one arrays X of shape (n) or (T, n)
+        End result will be one array X of shape (n) or (T, n)
         Allowed input shapes are:
         (1) ARRAY_N:    array of size n
         (2) ARRAY_TxN:  arrays of size Txn
@@ -129,11 +125,10 @@ class Fluxion:
         (4) ARGS:       a list of n values; n variables in order
         (5) KWARGS:     a kwargs list (currently not supported)
         """
-        # Types for X
+        # initialize the X variable that will be returned
         X: np.ndarray = np.ndarray(0)
-        # Get the number of arguments
+        # Get the number of arguments and inputs
         argc: int = len(args)
-        # Number of inputs
         n: int = self.n
         # Check each type in turn
         # The most common case is two arguments were passed for the vars and seeds
@@ -159,7 +154,7 @@ class Fluxion:
             if X.size > 0:
                 # Check that the two shapes are valid.
                 self.check_forward_mode_input(X)
-                # Return the two array
+                # Return the array of argument values
                 return X
         # If we reach here, we either got ARGS or KWARGS
         if argc == n:
@@ -190,9 +185,8 @@ class Fluxion:
         # Types for X and dX
         X: np.ndarray = np.ndarray(0)
         dX: np.ndarray = np.ndarray(0)
-        # Get the number of arguments
+        # Get the number of arguments and inputs
         argc: int = len(args)
-        # Number of inputs
         n: int = self.n
         # Check each type in turn
         # The most common case is two arguments were passed for the vars and seeds
@@ -202,6 +196,16 @@ class Fluxion:
         #     print(f'{arg}')
         if argc == 0:
             return None, None
+        # In the special case that argc == 1 and  n == 1, process X and default dX =1
+        if argc == 1 and n == 1:
+            # The lone argument
+            arg = args[0]
+            if isinstance(arg, dict):
+                X = np.array([arg[self.var_names[0]]])
+            elif isinstance(arg, scalar_instance_types):
+                X = np.array(args)
+            dX = np.ones_like(X)
+            return X, dX
         if argc == 2:
             # print(f'argc == 2')
             arg_vars = args[0]
@@ -242,16 +246,6 @@ class Fluxion:
             self.check_forward_mode_input(X)
             self.check_forward_mode_input(dX)
             return (X, dX)
-        # In the special case that n == 1 and argc ==1, process X and default dX =1
-        if n == 1 and argc == 1:
-            # The lone argument
-            arg = args[0]
-            if isinstance(arg, dict):
-                X = np.array([arg[self.var_names[0]]])
-            elif isinstance(arg, scalar_instance_types):
-                X = np.array(args)
-            dX = np.ones_like(X)
-            return X, dX
         # KWARGS not yet supported
         msg = f'argc={argc}'
         for arg in args:
@@ -268,7 +262,6 @@ class Fluxion:
             return shape[0]
         raise ValueError(f'Shape of X = {X.shape}. Must be either a 1D or 2D array.')
 
-
     def val(self, *args):
         """Funcation evaluation; abstract base class"""
         raise NotImplementedError
@@ -278,7 +271,7 @@ class Fluxion:
         raise NotImplementedError
 
     def diff(self, *args):
-        """Alias to forward_mode for compatibility with tests"""
+        """Call forward_mode; discard value, only keep the derivative."""
         val, diff = self.forward_mode(*args)
         return diff
 
@@ -338,7 +331,6 @@ class Fluxion:
             return Division(Const(other), self)
 
        
-
 # *************************************************************************************************
 class Unop(Fluxion):
     """Abstract class embodying a unary operation"""
@@ -348,50 +340,27 @@ class Unop(Fluxion):
 class Const(Unop):
     """A function returning a constant; floats are implicitly promoted to instances of Const"""
     def __init__(self, a: scalar_type, name: Optional[str]=None):
+        # Set default for name of a constant to 'c'
         if name is None:
             name = 'c'
-        # Initialize the parent Fluxion class        
+        # Initialize the parent Fluxion class; for a constant m=1 and n=0 (it depends on no variables)  
         Fluxion.__init__(self, 1, 0, name, [])
         # Constants are only floats (ints can be promoted)
         if not isinstance(a, scalar_instance_types):
             raise ValueError(f'Error: {a} is of type {type(a)}, not a scalar type (int or float).')
         # Promote an integer to a float if necessary
-        self.a = float(a)
+        self.a: float = float(a)
 
     def val(self, *args):
         """Forward mode differentiation for a constant"""
-        # Parse arguments into two numpy arrays
-        try:
-            X: np.ndarray
-            X = self.parse_args_val(*args)
-            # Get the number of samples from the shape of X
-            self.T: int = self.calc_T(X)
-            # The shape of the return arrays is Txm (NOT Txn!)
-            shape = (self.T, self.m)
-            # The value of a constant is ... the constant, with matching array shape        
-            val = self.a * np.ones(shape)
-        except:
-            val = self.a
-        return val
+        # Return the bound value regardless of the arguments passed
+        return self.a
 
     def forward_mode(self, *args):
         """Forward mode differentiation for a constant"""
-        # Parse arguments into two numpy arrays
-        try:
-            X: np.ndarray
-            dX: np.ndarray
-            X, dX = self.parse_args_forward_mode(*args)
-            # Get the number of samples from the shape of X
-            self.T: int = self.calc_T(X)
-            # The shape of the return arrays is Txm (NOT Txn!)
-            shape = (self.T, self.m)
-            # The value of a constant is ... the constant, with matching array shape        
-            val = self.a * np.ones(shape)
-            # The derivative of a constant is zeroes in the correct array shape
-            diff = np.zeros(shape)
-        except:
-            val = self.a
-            diff = 0.0
+        # Return the bound value and a derivative of zero regardless of the argumetns passed
+        val: float = self.a
+        diff: float = 0.0
         return (val, diff)
 
     def __repr__(self):
@@ -408,13 +377,17 @@ class Var(Unop):
             # T: int = self.calc_T(X)         
             if len(X.shape) == 2:
                 n = X.shape[1]
+                T = X.shape[0]
             else:
                 n = 1
+                T = 1
         else:
             n = 1
+            T = 0
         # Initialize the parent Fluxion class
         self.m = 1
         self.n = n
+        self.T = T
         self.name = var_name
         self.var_name = var_name
         self.var_names = [var_name]
@@ -423,15 +396,21 @@ class Var(Unop):
 
     def set_val(self, X: value_type):
         """Set the value of this variable"""
-        self.check_forward_mode_input(X)
-        self.X = X
+        if not isinstance(X, value_instance_types):
+            raise ValueError(f'Error: {X} of type {type(X)} is not a valute type.  Must be int, float, or numpy array.')
+        # If X was a scalar, bind the value
+        if isinstance(X, scalar_instance_types):
+            self.X = float(X)
+        else:
+            self.check_forward_mode_input(X)
+            self.X = X
 
     def val(self, *args):
         """Function evaluation for a variable"""
-        # Parse arguments into two numpy arrays
+        # Parse arguments into a numpy array
         X: np.ndarray = self.parse_args_val(*args)
         if X is not None:
-            return X        
+            return X
         return self.X
 
     def forward_mode(self, *args):
@@ -459,8 +438,7 @@ class Var(Unop):
         # Return both arrays
         return (val, diff)
 
-
-    def __call__(self, X: np.ndarray):
+    def __call___v1(self, X: np.ndarray):
         """
         Make variables callable like functions.
         Calling a variable with an input binds that value to the variable, then returns the updated variable instance.
@@ -502,7 +480,7 @@ class Power(Unop):
         return (val, diff)
 
     def __repr__(self):
-        return f'Power({self.f.nm}, {self.p})'
+        return f'Power({self.f.var_name}, {self.p})'
 
 # *************************************************************************************************
 class Binop(Fluxion):
@@ -515,7 +493,12 @@ class Binop(Fluxion):
         self.f = f
         self.g = g       
         # Create the list of variable names
-        self.var_names = [f.name, g.name]
+        var_names = []
+        if not isinstance(f, Const):
+            var_names += f.name
+        if not isinstance(g, Const):
+            var_names += g.name
+        self.var_names = var_names
         # Check the shapes
         if f.m != g.m:
             raise ValueError(f'In {self.__repr__()}, ms f.m={f.m} and g.m={g.m} must match for binary operation.')
@@ -542,11 +525,11 @@ class Addition(Binop):
     def forward_mode(self, *args):
         """Forward mode differentiation for a sum"""
         # (f+g)(x) = f(x) + g(x)
-        val_f, diff_f = self.f.forward_mode(*args)
-        val_g, diff_g = self.g.forward_mode(*args)
+        f_val, f_diff = self.f.forward_mode(*args)
+        g_val, g_diff = self.g.forward_mode(*args)
         # The function value and derivative is the sum of f and g
-        val = val_f + val_g
-        diff = diff_f + diff_g
+        val = f_val + g_val
+        diff = f_diff + g_diff
         return val, diff
 
     def __repr__(self):
@@ -570,13 +553,13 @@ class Subtraction(Binop):
     def forward_mode(self, *args):
         """Forward mode differentiation for a difference"""
         # (f-g)(x) = f(x) - g(x)
-        val_f, diff_f = self.f.forward_mode(*args)
-        val_g, diff_g = self.g.forward_mode(*args)
-        print(f'val_f = {val_f}')
-        print(f'val_g = {val_g}')
+        f_val, f_diff = self.f.forward_mode(*args)
+        g_val, g_diff = self.g.forward_mode(*args)
+        print(f'f_val = {f_val}')
+        print(f'g_val = {g_val}')
         # The function value and derivative is just the difference
-        val = val_f - val_g
-        diff = diff_f - diff_g
+        val = f_val - g_val
+        diff = f_diff - g_diff
         return val, diff
 
     def __repr__(self):
@@ -597,10 +580,10 @@ class Multiplication(Binop):
         # (f*g)(x) = f(x) * g(x)
         # print(f'Multiplication.val')
         # print(f'args={args}')
-        # val_f = self.f.val(*args)
-        # val_g = self.g.val(*args)
-        # print(f'val_f={val_f}')
-        # print(f'val_g={val_g}')
+        # f_val = self.f.val(*args)
+        # g_val = self.g.val(*args)
+        # print(f'f_val={f_val}')
+        # print(f'g_val={g_val}')
         return self.f.val(*args) * self.g.val(*args)
 
     def forward_mode(self, *args):
@@ -608,11 +591,11 @@ class Multiplication(Binop):
         # Product Rule of Calculus
         # https://en.wikipedia.org/wiki/Product_rule
         # (f*g)'(x) = f'(x) * g(x) + f(x) * g'(x)
-        val_f, diff_f = self.f.forward_mode(*args)
-        val_g, diff_g = self.g.forward_mode(*args)
+        f_val, f_diff = self.f.forward_mode(*args)
+        g_val, g_diff = self.g.forward_mode(*args)
         # The function value is the product (elementwise)
-        val = val_f * val_g
-        diff = diff_f * val_g + val_g * diff_g
+        val = f_val * g_val
+        diff = f_diff * g_val + g_val * g_diff
         return val, diff
 
 
@@ -638,10 +621,10 @@ class Division(Binop):
         # https://en.wikipedia.org/wiki/Quotient_rule
         # f(x) = g(x) / h(x),
         # f'(x) = (g('x)h(x) - g(x)h'(x)) / h(x)^2
-        val_f, diff_f = self.f.forward_mode(*args)
-        val_g, diff_g = self.g.forward_mode(*args)
-        val = val_f / val_g
-        diff = (diff_f * val_g - val_f * diff_g) / (val_g * val_g)
+        f_val, f_diff = self.f.forward_mode(*args)
+        g_val, g_diff = self.g.forward_mode(*args)
+        val = f_val / g_val
+        diff = (f_diff * g_val - f_val * g_diff) / (g_val * g_val)
         return val, diff
 
     def __repr__(self):
