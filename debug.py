@@ -1,7 +1,7 @@
 # from fluxion_node import Fluxion, Unop
 import numpy as np
 import fluxions as fl
-from fluxions import Fluxion, Var, DifferentiableFunctionNode, sin
+from fluxions import Fluxion, Var, DifferentiableFunction, sin
 
 x = fl.Var('x', 2)
 y = fl.Var('y', 3)

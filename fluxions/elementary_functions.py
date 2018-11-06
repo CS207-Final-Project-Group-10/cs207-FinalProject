@@ -15,26 +15,7 @@ value_types = (int, float, np.ndarray)
 
 
 # *************************************************************************************************
-class DifferentiableFunctionNode(Unop):
-    """Factory for analytically differentiable functions"""
-
-    def __init__(self, func: Callable, deriv: Callable, func_name: str, var_names: Union[str, List[str]] = 'x'):
-        """func is the value of the function, deriv is the derivative"""
-        # Bind the function evaluation and derivative
-        self.func = func
-        self.deriv = deriv
-        # Set function name and var names
-        self.func_name = func_name
-        self.set_var_names(var_names)
-
-    def __repr__(self):
-        return f'{self.func_name}'
-
-    def __call__(self, f):
-        return DifferentiableFunction(f, self.func, self.deriv, self.func_name, self.var_names)
-
-
-class DifferentiableFunction(Unop):
+class DifferentiableInnerFunction(Unop):
 
     def __init__(self, f, func: Callable, deriv: Callable, func_name: str, var_names: Union[str, List[str]] = 'x'):
         self.f = f
@@ -95,6 +76,26 @@ class DifferentiableFunction(Unop):
     def __repr__(self):
         return f'{self.func_name}({self.f})'
 
+
+class DifferentiableFunction(Unop):
+    """Factory for analytically differentiable functions"""
+
+    def __init__(self, func: Callable, deriv: Callable, func_name: str, var_names: Union[str, List[str]] = 'x'):
+        """func is the value of the function, deriv is the derivative"""
+        # Bind the function evaluation and derivative
+        self.func = func
+        self.deriv = deriv
+        # Set function name and var names
+        self.func_name = func_name
+        self.set_var_names(var_names)
+
+    def __repr__(self):
+        return f'{self.func_name}'
+
+    def __call__(self, f):
+        return DifferentiableInnerFunction(f, self.func, self.deriv, self.func_name, self.var_names)
+
+
 # *************************************************************************************************
 # List of mathematical functions in numpy
 # https://docs.scipy.org/doc/numpy-1.15.0/reference/routines.math.html
@@ -108,14 +109,14 @@ class DifferentiableFunction(Unop):
 # tan(x)
 
 # The derivative of sin(x) is cos(x)
-sin = DifferentiableFunctionNode(np.sin, np.cos, 'sin')
+sin = DifferentiableFunction(np.sin, np.cos, 'sin')
 
 # The derivative of cos(x) is -sin(x)
 def _minus_sin(x):
     """Return -sin(x); for the derivative of cos(x)"""
     return -np.sin(x)
 
-cos = DifferentiableFunctionNode(np.cos, _minus_sin, 'cos')
+cos = DifferentiableFunction(np.cos, _minus_sin, 'cos')
 
 # The derivative of tan(x) is sec^2(x)
 def _sec2(x):
@@ -123,7 +124,7 @@ def _sec2(x):
     cx = np.cos(x)
     return 1.0 / (cx * cx)
 
-tan = DifferentiableFunctionNode(np.tan, _sec2, 'tan')
+tan = DifferentiableFunction(np.tan, _sec2, 'tan')
 
 
 # *************************************************************************************************
@@ -138,21 +139,21 @@ def _deriv_arcsin(x):
     """The derivative of arcsin(x)"""
     return 1.0 / np.sqrt(1.0 - x*x)
 
-arcsin = DifferentiableFunctionNode(np.arcsin, _deriv_arcsin, 'arcsin')
+arcsin = DifferentiableFunction(np.arcsin, _deriv_arcsin, 'arcsin')
 
 # The derivative of arccos(x) is -1 times the derivative of arcsin(x)
 def _deriv_arccos(x):
     """The derivative of arccos(x)"""
     return -1.0 / np.sqrt(1.0 - x*x)
 
-arccos = DifferentiableFunctionNode(np.arccos, _deriv_arccos, 'arccos')
+arccos = DifferentiableFunction(np.arccos, _deriv_arccos, 'arccos')
 
 # The derivative of arctan is 1 / (1+x^2)
 def _deriv_arctan(x):
     """The derivative of arctan(x)"""
     return 1.0 / (1.0 + x*2)
 
-arctan = DifferentiableFunctionNode(np.arctan, _deriv_arctan, 'arctan')
+arctan = DifferentiableFunction(np.arctan, _deriv_arctan, 'arctan')
 
 
 # *************************************************************************************************
@@ -176,7 +177,7 @@ def _deriv_hypot(x, y):
     df_dy = y / r
     return np.vstack([df_dx, df_dy]).T
 
-hypot = DifferentiableFunctionNode(np.hypot, _deriv_hypot, 'hypot', ['x', 'y'])
+hypot = DifferentiableFunction(np.hypot, _deriv_hypot, 'hypot', ['x', 'y'])
 
 # atan2(y, x) = atan(y/x) with the angle chosen in the correct quadrant
 # https://en.wikipedia.org/wiki/Atan2
@@ -188,7 +189,7 @@ def _deriv_arctan2(y, x):
     return np.vstack([df_dy, df_dx].T)
 
 
-arctan2 = DifferentiableFunctionNode(np.arctan2, _deriv_arctan2, 'arctan2', ['y', 'x'])
+arctan2 = DifferentiableFunction(np.arctan2, _deriv_arctan2, 'arctan2', ['y', 'x'])
 
 # radians(x) = k*x, where k is the number of degrees in one radian
 # rad2deg(x) is an alias for degrees(x)
@@ -196,16 +197,16 @@ _k_rad2deg = np.degrees(1.0)
 def _deriv_rad2deg(x):
     return _k_rad2deg
 
-rad2deg = DifferentiableFunctionNode(np.rad2deg, _deriv_rad2deg, 'rad2deg', 'x') 
-degrees = DifferentiableFunctionNode(np.degrees, _deriv_rad2deg, 'degrees', 'x') 
+rad2deg = DifferentiableFunction(np.rad2deg, _deriv_rad2deg, 'rad2deg', 'x') 
+degrees = DifferentiableFunction(np.degrees, _deriv_rad2deg, 'degrees', 'x') 
 
 # radians(x) = k*x, where k is the number of radians in one degree
 _k_deg2rad = np.radians(1.0)
 def _deriv_deg2rad(x):
     return _k_deg2rad
 
-deg2rad = DifferentiableFunctionNode(np.deg2rad, _deriv_deg2rad, 'deg2rad', 'x')
-radians = DifferentiableFunctionNode(np.radians, _deriv_deg2rad, 'radians', 'x')
+deg2rad = DifferentiableFunction(np.deg2rad, _deriv_deg2rad, 'deg2rad', 'x')
+radians = DifferentiableFunction(np.radians, _deriv_deg2rad, 'radians', 'x')
 
 
 # *************************************************************************************************
@@ -219,10 +220,10 @@ radians = DifferentiableFunctionNode(np.radians, _deriv_deg2rad, 'radians', 'x')
 # arctanh(x)
 
 # The derivative of sinh(x) is cosh(x)
-sinh = DifferentiableFunctionNode(np.sinh, np.cosh, 'sinh', 'x')
+sinh = DifferentiableFunction(np.sinh, np.cosh, 'sinh', 'x')
 
 # The derivative of cosh(x) is sinh(x)
-cosh = DifferentiableFunctionNode(np.cosh, np.sinh, 'cosh', 'x')
+cosh = DifferentiableFunction(np.cosh, np.sinh, 'cosh', 'x')
 
 # The derivative of tanh(x) is 1 / cosh^2(x)
 def _deriv_tanh(x):
@@ -230,28 +231,28 @@ def _deriv_tanh(x):
     cx = np.cosh(x)
     return 1.0 / cx * cx
 
-tanh = DifferentiableFunctionNode(np.tanh, _deriv_tanh, 'tanh', 'x')
+tanh = DifferentiableFunction(np.tanh, _deriv_tanh, 'tanh', 'x')
 
 # The derivative of arcsinh is 1 / sqrt(x^2+1)
 def _deriv_arcsinh(x):
     """The derivative of arcsinh(x)"""
     return 1.0 / np.sqrt(x*x + 1)
 
-arcsinh = DifferentiableFunctionNode(np.arcsinh, _deriv_arcsinh, 'arcsinh', 'x')
+arcsinh = DifferentiableFunction(np.arcsinh, _deriv_arcsinh, 'arcsinh', 'x')
 
 # The derivative of arccosh is 1 / sqrt(x^2-1); only exists for 1 < x
 def _deriv_arccosh(x):
     """The derivative of arccosh(x)"""
     return 1.0 / np.sqrt(x*x - 1)
 
-arccosh = DifferentiableFunctionNode(np.arccosh, _deriv_arccosh, 'arccosh', 'x')
+arccosh = DifferentiableFunction(np.arccosh, _deriv_arccosh, 'arccosh', 'x')
 
 # The derivative of arctanh is 1 / (1-x^2); only exists for -1 < x < 1
 def _deriv_arctanh(x):
     """The derivative of arctanh(x)"""
     return 1.0 / (1.0 - x*x)
 
-arctanh = DifferentiableFunctionNode(np.arctanh, _deriv_arctanh, 'arctanh', 'x')
+arctanh = DifferentiableFunction(np.arctanh, _deriv_arctanh, 'arctanh', 'x')
 
 # *************************************************************************************************
 # Rounding functions are NOT differentiable! Skip these...
@@ -275,10 +276,10 @@ arctanh = DifferentiableFunctionNode(np.arctanh, _deriv_arctanh, 'arctanh', 'x')
 # logaddexp2(x1, x2)
 
 # The derivative of exp(x) is exp(x)
-exp = DifferentiableFunctionNode(np.exp, np.exp, 'exp', 'x')
+exp = DifferentiableFunction(np.exp, np.exp, 'exp', 'x')
 
 # The derivative of f(x) = exp(x) - 1 is exp(x)
-expm1 = DifferentiableFunctionNode(np.expm1, np.exp, 'exp', 'x')
+expm1 = DifferentiableFunction(np.expm1, np.exp, 'exp', 'x')
 
 # The derivative of exp2(x) = 2^x is log(2) * 2^x
 _log2 = np.log(2.0)
@@ -286,7 +287,7 @@ def _deriv_exp2(x):
     """The derivative of exp2(x)"""
     return _log2 * np.exp2(x)
 
-exp2 = DifferentiableFunctionNode(np.exp2, _deriv_exp2, 'exp2', 'x')
+exp2 = DifferentiableFunction(np.exp2, _deriv_exp2, 'exp2', 'x')
 
 # The derivative of log(x) is 1/x
 # Use this hand-rolled function because the numpy reciprocal function doesn't handle integers well
@@ -294,7 +295,7 @@ def _recip(x):
     """Return the reciprocal of x; to be used as the derivative of log(x)"""
     return 1.0 / x
 
-log = DifferentiableFunctionNode(np.log, _recip, 'log', 'x')
+log = DifferentiableFunction(np.log, _recip, 'log', 'x')
 
 # The derivative of log10(x) is (1 / log(10) * 1 / x
 _log10 = np.log(10.0)
@@ -302,7 +303,7 @@ def _deriv_log10(x):
     """The derivative of log10(x)"""
     return 1.0 / (_log10 * x)
 
-log10 = DifferentiableFunctionNode(np.log10, _deriv_log10, 'log10', 'x')
+log10 = DifferentiableFunction(np.log10, _deriv_log10, 'log10', 'x')
 
 
 # The derivative of log2(x) is (1 / log(2) * 1 / x
@@ -310,7 +311,7 @@ def _deriv_log2(x):
     """The derivative of log2(x)"""
     return 1.0 / (_log2 * x)
 
-log2 = DifferentiableFunctionNode(np.log2, _deriv_log2, 'log2', 'x')
+log2 = DifferentiableFunction(np.log2, _deriv_log2, 'log2', 'x')
 
 
 # The derivative of log1p(x) = log(1 +x ) = 1 / (1+x)
@@ -318,7 +319,7 @@ def _deriv_log1p(x):
     """The derivative of log1p(x)"""
     return 1.0 / (1.0 + x)
 
-log1p = DifferentiableFunctionNode(np.log1p, _deriv_log1p, 'log1p', 'x')
+log1p = DifferentiableFunction(np.log1p, _deriv_log1p, 'log1p', 'x')
 
 def _deriv_logaddexp(x1, x2):
     """The derivative of f(x, y) = log(e^x + e^y)"""
@@ -328,7 +329,7 @@ def _deriv_logaddexp(x1, x2):
     df_dx2 = y2 / (y1 + y2)
     return np.vstack([df_dx1, df_dx2]).T
 
-logaddexp = DifferentiableFunctionNode(np.logaddexp, _deriv_logaddexp, 'logaddexp', '[x1, x2]')
+logaddexp = DifferentiableFunction(np.logaddexp, _deriv_logaddexp, 'logaddexp', '[x1, x2]')
 
 
 def _deriv_logaddexp2(x1, x2):
@@ -339,5 +340,4 @@ def _deriv_logaddexp2(x1, x2):
     df_dx2 = y2 / (y1 + y2)
     return np.vstack([df_dx1, df_dx2]).T
 
-logaddexp2 = DifferentiableFunctionNode(np.logaddexp2, _deriv_logaddexp2, 'logaddexp2', '[x1, x2]')
-
+logaddexp2 = DifferentiableFunction(np.logaddexp2, _deriv_logaddexp2, 'logaddexp2', '[x1, x2]')

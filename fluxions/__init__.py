@@ -4,7 +4,7 @@ name = "fluxions"
 # The "public API" of the fluxions package
 from .fluxion_node import Fluxion, Var, Unop, Const, Binop
 from .fluxion_node import Addition, Subtraction, Multiplication, Division, Power
-from .elementary_functions import DifferentiableFunction, DifferentiableFunctionNode
+from .elementary_functions import DifferentiableInnerFunction, DifferentiableFunction
 # Trigonometric functions
 from .elementary_functions import sin, cos, tan, arcsin, arccos, arctan, arctan2
 # Miscellaneous trigonometric functions
