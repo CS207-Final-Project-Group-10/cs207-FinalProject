@@ -39,6 +39,7 @@ def test_basic_usage():
     # Evaluate f1(x) using dictionary binding syntax
     assert(f1.val({'x':2}) == 10)
     assert(f1.diff({'x':2}) == 5)
+    assert(f1({'x':2}) == (10.0, np.array([5.])))
     assert repr(f1) == "Multiplication(Var(x, 1.0), Const(5.0))"
 
     # f2(x) = 1 + (x * x)
