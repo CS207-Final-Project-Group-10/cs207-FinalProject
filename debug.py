@@ -9,11 +9,11 @@ f1 = x * y
 f1.set_var_names(['x', 'y'])
 
 ans_pos = f1(2, 3)
-print(f'f1(2,3) = {ans_pos}, expected 6.')
+# print(f'f1(2,3) = {ans_pos}, expected 6.')
 assert ans_pos[0] == 6
 
 ans_dict = f1({'x': 2, 'y': 3})
-print(f'f1(var_tbl) = {ans_dict}, expected 6.')
+# print(f'f1(var_tbl) = {ans_dict}, expected 6.')
 assert ans_dict[0] == 6
 
 
@@ -22,4 +22,8 @@ f = sin(f1)
 
 theta_val = np.linspace(0, 2*np.pi, 361)
 theta = fl.Var('theta', theta_val)
-Cos = fl.cos(theta)
+cos_theta = fl.cos(theta)
+
+sin_x = sin(x)
+# sin_x_eval = sin_x()
+sin_x.val()

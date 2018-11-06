@@ -220,24 +220,6 @@ class Binop(Fluxion):
         self.f = f
         self.g = g
 
-    def __call__(self, *args):
-        """Make binary operations callable like functions"""
-        argc: int = len(args)
-        # print(f'In Binop.__call__()')
-        # print(f'argc={argc}, args={args}')
-        # If argc == 0, proceed on the basis that the function has input variables with bound values
-        if argc == 0:
-            return self.val(), self.diff()
-        # If argc == 1 and arg is a dictionary, proceed on the basis that the function was called with a dictionary
-        if argc == 1 and isinstance(args[0], dict):
-            var_tbl = args[0]
-        elif argc == len(self.var_names):
-            # Proceed on the basis that the function was called with argument by value
-            # Bind arguments into a variable table
-            var_tbl = self.bind_args(*args)
-        # print(f'Variable Table: {var_tbl}')
-        return self.val(var_tbl), self.diff(var_tbl)
-
 class Addition(Binop):
     """Addition (sum) of two fluxions; h = f + g"""
     def val(self, args=None):

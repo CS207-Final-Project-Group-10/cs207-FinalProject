@@ -43,7 +43,7 @@ class differentiable_inner_function(Unop):
         self.func_name = func_name
         self.var_names = var_names
 
-    def val(self, arg):        
+    def val(self, arg):
         if isinstance(arg, dict):
             # If the argument was a dictionary, run the val() method on the stored fluxion
             # print(f'In differentiable_function.val(), arg={arg}')
