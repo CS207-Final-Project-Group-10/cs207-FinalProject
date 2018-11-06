@@ -11,6 +11,7 @@ else:
 from typing import List, Callable, Union
 value_type = Union[int, float, np.ndarray]
 function_arg = Union[value_type, Fluxion]
+value_types = (int, float, np.ndarray)
 
 
 # *************************************************************************************************
@@ -43,35 +44,49 @@ class differentiable_inner_function(Unop):
         self.func_name = func_name
         self.var_names = var_names
 
-    def val(self, arg):
-        if isinstance(arg, dict):
-            # If the argument was a dictionary, run the val() method on the stored fluxion
-            # print(f'In differentiable_function.val(), arg={arg}')
-            arg_value = self.f.val(arg)
-            # print(f'Evaluated argument = {arg_value}')
-            return self.func(arg_value)
-        else:
-            # If the argument was a value type, evaluate the function
-            return self.func(arg)
-
-    def diff(self, arg):
-        if isinstance(arg, dict):
-            # If the argument was a dictionary, run the val() method on it
-            # print(f'In differentiable_function.val(), arg={arg}')
-            arg_value = self.f.val(arg)
-            arg_diff = self.f.diff(arg)
-            # print(f'Evaluated argument = {arg_value}')
-            # print(f'Evaluated argument derivative = {arg_diff}')
+    def arg_val_diff(self, arg):
+        """Compute the value and derivative of the argument to the inner function."""
+        if arg is None:
+            # If no argument was provided, attempt to run the val() and diff() methods on the fluxion self.f
             try:
-                return self.deriv(arg_value) * arg_diff
-            except (ValueError):
-                diffarray = np.zeros(np.shape(arg_diff))
-                for i, (f,g) in enumerate(zip(self.deriv(arg_value),arg_diff)):
-                    diffarray[i]=f*g
-                return diffarray
-        else:
+                val = self.f.val()
+                diff = self.f.diff()
+            except:
+                raise RuntimeError(f'Can only evaluate a differentiable function with no arguments when '
+                                   f'the inner function has a val() method that returns a value!')
+        elif isinstance(arg, dict):
+            # If the argument was a dictionary, run the val() method on the stored fluxion
+            val = self.f.val(arg)
+            diff = self.f.diff(arg)
+            # print(f'Evaluated argument = {arg_value}')
+        elif hasattr(arg, 'val') and hasattr(arg, 'diff'):
+            # If the argument has val and diff methods, treat it as a fluxion: evaluate its val and diff.
+            val = arg.val()
+            diff = arg.diff()
+        elif isinstance(arg, value_types):
             # If the argument was a value type, evaluate the function
-            return 0.0
+            val = arg
+            diff = 1.0
+        else:
+            raise RuntimeError(f'Error: arg {arg} of type {type(arg)} not a supported type.'
+                               f'Type must be a value type (int, float, np.ndarray), a dict, '
+                               f'or a Fluxion with a val() method.')
+        return val, diff
+
+    def val(self, arg=None):
+        # Evaluate the argument; don't need its derivative
+        arg_value, _ = self.arg_val_diff(arg)
+        return self.func(arg_value)
+
+    def diff(self, arg=None):
+        arg_value, arg_diff = self.arg_val_diff(arg)
+        try:
+            diff_array = self.deriv(arg_value) * arg_diff
+        except (ValueError):
+            diff_array = np.zeros(np.shape(arg_diff))
+            for i, (f,g) in enumerate(zip(self.deriv(arg_value),arg_diff)):
+                diff_array[i]=f*g
+        return diff_array
 
     def __repr__(self):
         return f'{self.func_name}({self.f})'
