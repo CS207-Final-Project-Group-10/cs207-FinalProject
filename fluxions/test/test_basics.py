@@ -68,6 +68,9 @@ def test_basic_usage():
     assert(f5.diff(8) == 16)
     assert(f5.val(8, 3) == 512)
     assert(f5.diff(8, 3) == 3*64)
+    assert(f5() == (1.0, 2.0))
+    assert(f5(1) == (1.0, 2.0))
+    assert(f5({'x':1}) == (1.0, 2.0))
     assert repr(f5) == "Power(x, 2)"
 
     #check assignment
