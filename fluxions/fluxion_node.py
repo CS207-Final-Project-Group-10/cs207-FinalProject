@@ -301,7 +301,6 @@ class Division(Binop):
             gdiff = 0
         if np.linalg.norm(gval) == 0 or np.linalg.norm(fdiff) == 0:
             fdiff = 0
-            gval = 0
         try:
             return (fdiff * gval - fval * gdiff) / \
                     (gval * gval)

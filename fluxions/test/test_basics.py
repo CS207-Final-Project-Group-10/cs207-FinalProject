@@ -88,6 +88,12 @@ def test_basic_usage():
     c.set_val(0)
     assert(c(1)==(1, np.array([1])))
 
+    #check division
+    f6 = 1/x
+    f6 = 1/x
+    assert(f6.val({'x':1,'y':1}) == 1)
+    assert(f6.diff({'x':1,'y':1}) == np.array([[-1.,  0.]])).all()
+
     #check subtraction and division
     f7 = (1 - x + 1 - 1) / ((x * x)/1)
     f7.set_var_names('x')
