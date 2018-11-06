@@ -73,6 +73,16 @@ def test_basic_usage():
     #check assignment
     a = fl.Fluxion()
     assert a.is_node()
+    b = fl.Unop(a)
+    b.set_var_name('x')
+    assert b.is_node()
+    c = fl.Var('x')
+    assert(c.diff(0) == 1)
+    assert(c.diff({'x':1}) == 1)
+    assert(c.diff({'x':1},{'x':2}) == 2)
+    assert(c.diff({'x':1,'y':1},{'x':2,'y':1}) == np.array([[2, 0]])).all()
+    c.set_val(0)
+    assert(c(1)==(1, np.array([1])))
 
     #check subtraction and division
     f7 = (1 - x + 1 - 1) / ((x * x)/1)
