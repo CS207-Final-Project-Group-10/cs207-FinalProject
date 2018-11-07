@@ -309,6 +309,7 @@ class Fluxion:
             return shape[0]
         raise ValueError(f'Shape of X = {X.shape}. Must be either a 1D or 2D array.')
 
+    # ***********************************************************************************************
     def val(self, *args):
         """Funcation evaluation; abstract base class"""
         raise NotImplementedError

@@ -112,23 +112,65 @@ Tests for each of these two modules
 ## Implementation details
 ### Core Data Structures
 
-All numerical data...
+We made an important policy decision early on in project development: all numerical data including inputs, outputs, and intermediate calculations is stored in `numpy` arrays.  The only class we use that persists data is the Var class; when it persists data (either at initiation time or by calling the `set_val` method), that is stored as an array.  When the expression tree is built up, each Fluxion node returns calculations as arrays.  The `Fluxion.val()` method returns a single array with the function value, and the `Fluxion.forward_mode` method returns a tuple of two arrays with the function evaluation and derivative applied to that seed value.  The driving consideration behind this decision was the capability to provide the highest possible speed and memory efficiency if a user chose to use the library on large data sets.  For the toy problems we've used in testing it hasn't yet been relevant, but it would matter.
+
+We do make light use of some built-in Python functions for parts of the code that aren't critical to performance.  When an end user passes in values for a function to be evaluated or differentiated, they can do use a Python `dict` instance.  The key in the dictionary is the variable name, the value is the value bound to that variable.  We also store the ordered list of input variables of a Fluxion as a Python `list`.
 
 ### Core Classes
 
-xxx
+#### *Fluxion*
+
+The workhorse class in the design is the `Fluxion`.  This class doesn't do any real calculations per se, but it does as much of the shared book-keeping as possible so we can avoid code repetition.  When a Fluxion instance is created, it sets the tensor size attributes $m$, $n$ and $T$ (please see the next section for more details).  The initialization also sets the `name` and `var_names` attributes (please see below).
+
+The key things that a Fluxion instance can do are `val` and `forward_mode`.  The `val` method corresponds to function evaluation; no derivatives are calculated.  The `forward_mode` method corresponds to performing a single pass of forward mode evaluation with one seed value.  Both of these methods take as inputs `*args`, allowing them to be called with alternative footprints.  For the `val` method, ways of calling include a single numpy array `X`; and a dictionary `var_tbl` where each variable name has either a scalar value (`float` or `int`) or a numpy array.  When an array is passed, it can have shape `(n)` or `(T, n)`.  The inputs for `forward_mode` need to be sufficient to resolve both the input array $X$ as well as the seed value.  The analogous footprints include a pair of arrays, which we would label $X$ and $dX$; or a pair of dictionaries, which we could label `var_tbl` and `seed_tbl`.
+
+All the work of parsing these arguments for `val()` and `forward_mode` is performed in the methods `parse_args_val` and `parse_args_forward_mode`.  This is some of the more obscure code in the whole package.  Localizing this code in the Fluxion class at the very top of the inheritance hierarchy allows us to avoid duplicating it elsewhere.
+
+Moving on to the more substantive capabilities of a Fluxion, it overloads all of the relevant mathematical operators, including `+`, `-`, `*`, `/`, and `**`.  These are accomplished by dispatching suitable calls to instances of the class `Binop` or `Unop`.
+
+#### *Unop, Const and Var*
+
+The `Unop` class embodies the concept of a unary operator.  Descendants of Unop have non-trivial implementations of `val` and `forward_mode`.  There are two key examples of Unops: `Const` and `Var`.  The names speak for themselves... `Const` is a constant, depending on no variables and having a derivative of zero.  `Var` is a logical entity for a variable.  The statement `x = fl.Var('x')` creates an instance of a Fluxion Var class.  The local name `x` in our Python program has `x.name = 'x'` and `x.variable_names= ['x']`.  This permits us to then create another Fluxion e.g. `f = x * x + 5` which behaves as we expect it to.  Power is also a Unop, and the ElementaryFunction class (discussed below) also inherits from Unop.
+
+#### *Binop, Addition, Subtraction, Multiplication and Division*
+
+The `Binop` class embodies the concept of a binary operator.  All of the work of performing the calculations of a binary operation are performed in the children of `Binop`.  The `Binop` itself is quite minimal; it binds the two input fluxions to attributes called `f` and `g`.  It also sets a preliminary list of variable names by merging the names of variables for `f` and `g`, suppressing duplicates. 
+
+We can understand all four basic arithmetic operations through one example, `Muliplication`.  The two interesting methods on Multiplication are `val` and `forward_mode`.  The evaluation method `val` dispatches calls to `f` and `g` and returns their product.  The forward_mode method builds up `f_val, f_diff` by calling `f.forward_mode`, and similarly for `g`.  Then it applies the product rule of calculus.  It is worth reiterating here that the intermediate results returned in `f_val, f_diff, g_val, g_diff` are all numpy arrays, so the computation `f_val * g_diff + f_diff * g_val` is performed with maximum efficiency.
+
+#### *Elementary Functions*
+
+Please see the major section below for a discussion of the implementation for elementary functions.
 
 ### Important Attributes
 
-xxx
+Every `Fluxion` represents a function from $\mathbb{R^n}$ to $\mathbb{R^n}$.  These should be invariant after the Fluxion is instantiated, though this is not currently enforced.  The sizes are integer attributes named `m` and `n` on the Fluxion class.  A Fluxion also has a notion of the number of sample points `T`. This is analogous to basic vectorization in `numpy`.  For example, if you call `np.sin` on a numpy array of shape (100,), you get back another array of shape (100,).  You only pay the overhead of calling the function and doing Python "unboxing" once.
+
+Every Fluxion has a name; these are not expected to be unique.  Variables also have names.  This makes it possible for users to pass inputs with dictionaries, and makes the output of the `__repr__` function comprehensible.  Every Fluxion also an attribute called `var_names`, which is a list of the variables that it depends on (i.e. its inputs).  This attribute controls the interpretation of input presented to a Fluxion for evaluation.  For example, the Fluxions implementation extending the `numpy` built-in function `atan2` has variable names `['y', 'x']`.  This also controls the order of columns in the Jacobian.
 
 ### External Dependencies
 
-xxx
+Our external dependencies are listed in the file `requirements.txt`.  The highlight by far is `numpy`.  Our library is essentially an extension of `numpy`, and it has a strong dependency on it.  For testing, we are dependent on `pytest` and `pytest-cov`.  The remaining dependencies are routine.  For a user who has the Anaconda python distribution, the only thing they should have to install is `pytest-cov`.   For a user on `PyPI` once they have a stable `numpy` setup, all dependencies are very easy to install.
 
 ### Elementary Functions
 
-xxx
+There were two guiding principles in the implementations of the elementary functions, i.e. basic mathematical functions that are analytically differentiable.  The first one was to do the calculations of the derivative with pencil and paper first.  The second one was to use the `numpy` implementations to do all the numerical calculations.  As a corollary, we also chose to follow `numpy` naming conventions on a one to one basis.  We ended up porting all of the mathematical functions in `numpy` where we thought porting made sense.   The full list is here: https://docs.scipy.org/doc/numpy-1.15.0/reference/routines.math.html 		As an example of some of the functions we skipped, `np.round` was omitted because it is not differentiable.
+
+The list of elementary functions supported is as follows:
+
+​	Trigonometric Functions: `sin, cos, tan`
+
+​	Inverse Trigonometric Functions: `arcsin, arccos, arctan`
+
+​	Miscellaneous Trigonometric Functions: `hypot, arctan2, degrees, radians, deg2rad, rad2deg`
+
+​	Hyperbolic Functions: `sinh, cosh, tanh, arcsinh, arccosh, arctanh`
+
+​	Exponents & Logarithms: `exp, expm1, log, log10, log2, log1p, logaddexp, logaddexp2`
+
+We used two classes to implement the elementary functions: `DifferentiableInnerFunction` and `DifferentiableFunction`.  At first this was slightly confusing to us, and we thought we needed only one class, e.g. `fl.sin` analogous to `np.sin`.  But we need our calculation graph to have one class instance for every node.  This led to a design where the `DifferentiableInnerFunction` is a `Unop` that represents a  single node on the calculation graph.  It has one input, a Fluxion `f` that can be either a value type or another Fluxion.  The `__init__` method for it binds the fluxion it depends on, plus two callables `func` and `deriv`.  As an example, when we construct a node `el_func_node = fl.sin(fl.var('x'))`for $f(x) = sin(x)$, the input `el_func_node.f`is an instance of `Var` with name 'x', and the two callables are `node.func = np.sin` and `node.deriv = np.cos`.
+
+The `DifferentiableFunction` class is what is exposed to end users.  It is essentially a factory for producing instances of `DifferentiableInnerFunction`.  The `__init__` method basically associates one of these factories with the two callables for the function and its derivatives, plus the tensor sizes and names.  As an example of how this works, 															`sin = DifferentiableFunction(np.sin, np.cos, 'sin', 'x', 1, 1)`
 
 
 ## Future Plans
