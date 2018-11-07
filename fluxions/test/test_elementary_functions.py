@@ -103,13 +103,13 @@ def __test_compositions():
     # composition of 2 elementary functions: 
     # (a) immediate evaluation
     val_diff_result = fl.log(fl.exp(theta_vec)[0])
-    assert(all( val_diff_result[0] == np.ones_like(theta_vec) ))
-    assert(all( val_diff_result[1] == theta_vec )) 
+    assert(all( val_diff_result[0] == theta_vec ))
+    assert(all( val_diff_result[1] == 1/fl.exp(theta_vec)[0] )) 
     
     # (b) delayed evaluation
     logexp = fl.log(fl.exp(fl.Var('theta')))
-    assert(all( logexp.val({'theta':theta_vec}) == np.ones_like(theta_vec) ))
-    assert(all( logexp.diff({'theta':theta_vec}) == theta_vec ))
+    assert(all( logexp.val({'theta':theta_vec}) == theta_vec ))
+    assert(all( logexp.diff({'theta':theta_vec}) == np.ones_like(theta_vec) ))
     
     # composition of elementary functions and basic ops (other Fluxions)
     # (a) immediate evaluation
