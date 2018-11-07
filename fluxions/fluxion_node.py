@@ -384,6 +384,9 @@ class Fluxion:
 
     def __pow__(self, p: int):
         return Power(self, p)
+    
+    def __neg__(self):
+        return Multiplication(self, Const(-1))
             
        
 # *************************************************************************************************
@@ -530,6 +533,7 @@ class Power(Unop):
 
     def __repr__(self):
         return f'Power({self.f.var_name}, {self.p})'
+
 
 # *************************************************************************************************
 class Binop(Fluxion):

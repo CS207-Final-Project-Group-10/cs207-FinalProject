@@ -101,6 +101,16 @@ def test_basic_usage():
     f7.set_var_names('x')
     assert(f7.val({'x':2}) == -0.25)
     assert(f7.diff({'x':2}) == 0)
+    
+    # check negation
+    f8 = -x
+    assert(f8.val({'x':2}) == -2)
+    assert(f8.diff({'x':2}) == -1)
+    
+    y = fl.Var('y')
+    f9 = -(x * y)
+    assert(f9.val({'x':-2, 'y':3}) == 6)
+    #assert(f9.val({'x':-2, 'y':3}, {'x':1}))
 
 # Report results
 report_success()
