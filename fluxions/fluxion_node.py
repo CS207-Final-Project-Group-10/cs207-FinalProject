@@ -85,8 +85,10 @@ class Fluxion:
         """Update the ordered list of variable names, _var_names."""
         if isinstance(var_names, str):
             self.var_names = [var_names]
+            self.n = len(var_names)
         elif isinstance(var_names, list):
             self.var_names = var_names
+            self.n = len(var_names)
         else:
             raise TypeError('var_names must be a string or a list of strings')
 
@@ -94,8 +96,11 @@ class Fluxion:
         """Set the name of a single variable."""
         self.set_var_names([var_name])
 
-    def check_forward_mode_input(self, X: np.ndarray) -> None:
-        """Check whether one forward mode input array is of valid shape"""
+    def check_forward_mode_input(self, X: np.ndarray) -> int:
+        """
+        Check whether one forward mode input array is of valid shape
+        Returns inferred value of T
+        """
         if not isinstance(X, np.ndarray):
             raise ValueError('Must be a numpy array')
         # Get the shape and tensor rank
@@ -104,15 +109,69 @@ class Fluxion:
         # Only 1D and 2D arrays are supported
         if tensor_rank not in (1, 2):
             raise ValueError('Numpy array must be a 1D vector or 2D matrix')        
-        # If the input was a 1D vector, it must have length n
-        if tensor_rank == 1 and (shape[0] != self.n):
+        # If the input was a 1D vector, its length must EITHER (1) be n, or (2) n == 1
+        if tensor_rank == 1 and (shape[0] != self.n) and (self.n != 1):
             raise ValueError(f'Error: X has shape {X.shape}, incompatible with n = {self.n} on fluxion.')
+        # Return the value of T in this situation
+        if tensor_rank == 1 and shape[0] == self.n:
+            return 1
+        if tensor_rank == 1 and self.n == 1:
+            return shape[0]
+        # If the input was a 2D vector, it must be of shape Txn
         if tensor_rank == 2 and (shape[1] != self.n):
             raise ValueError(f'Error: X has shape {X.shape}, incompatible with n = {self.n} on fluxion.')
+        return shape[0]            
 
     def check_forward_mode_inputs(self, X: np.ndarray, dX: np.ndarray) -> None:
         self.check_forward_mode_input(X)
         self.check_forward_mode_input(dX)
+
+    def parse_var_tbl(self, var_tbl, default: Optional[float]=None):
+        """Parse a table of variable bindings (dictionary with key = variable name, value = scalar or array."""
+        n: int = self.n
+        # print(f'processing dict...')
+        # Find the first match of a variable to infer whether these are scalars or arrays
+        T: int = 1
+        for var_name in self.var_names:
+            if var_name in var_tbl:
+                # The bound value to this variable name
+                val = var_tbl[var_name]
+                # case 1: this is a scalar; T=1
+                if isinstance(val, scalar_instance_types):
+                    T = 1
+                elif isinstance(val, np.ndarray):
+                    T = self.check_forward_mode_input(val)
+                else:
+                    raise ValueError(f'val={val} in var_tbl; not a recognized value type.')
+                # once the first variable is found, assume the rest share the same T
+                break
+        # The shape of X based on T and n
+        if T > 1 and n > 1:
+            shape = (T, n)
+            X = np.zeros((T, n))            
+        elif T > 1 and n == 1:
+            shape = (T,)
+        elif T == 1:
+            shape = (n,)
+        # Initialize X to zeros in the correct shape        
+        X = np.zeros(shape)
+
+        # Fill in variables by their slot
+        def var_lookup(var_name: str):
+            if default is None:
+                return var_tbl[var_name]
+            else:
+                return var_tbl.get(var_name, default)
+
+        for j, var_name in enumerate(self.var_names):
+            # All the input values must be specified
+            if shape == (T, n):
+                X[:,j] = var_lookup(var_name)
+            elif shape == (T,):
+                X[:] = var_lookup(var_name)
+            else:
+                X[j] = var_lookup(var_name)
+        return X        
 
     def parse_args_val(self, *args) -> np.ndarray:
         """
@@ -143,13 +202,7 @@ class Fluxion:
                 X = arg_vars
             # Check whether we got a dict
             elif isinstance(arg_vars, dict):
-                # print(f'processing dict...')
-                # Initialize X to zeros in the correct shape
-                X = np.zeros(n)
-                # Fill in variables by their slot
-                for i, var_nm in enumerate(self.var_names):
-                    # All the input values must be specified
-                    X[i] = arg_vars[var_nm]
+                X = self.parse_var_tbl(arg_vars)
             # If we've filled in arrays X and dX at this point, check their sizes
             if X.size > 0:
                 # Check that the two shapes are valid.
@@ -193,7 +246,7 @@ class Fluxion:
         # They can both be numpy arrays or dicts
         # print(f'Entering parse_args_forward_mode. argc={argc}, n={n}')
         # for arg in args:
-        #     print(f'{arg}')
+        #    print(f'{arg}')
         if argc == 0:
             return None, None
         # In the special case that argc == 1 and  n == 1, process X and default dX =1
@@ -217,16 +270,10 @@ class Fluxion:
                 dX = arg_seed
             # Check whether we got a pair of dicts
             elif isinstance(arg_vars, dict) and isinstance(arg_seed, dict):
-                # print(f'Var.parse_forward_mode - processing dict...')
-                # Initialize X and dX to zeros in the correct shape
-                X = np.zeros(n)
-                dX = np.zeros(n)
-                # Fill in variables by their slot
-                for i, var_nm in enumerate(self.var_names):
-                    # All the input values must be specified
-                    X[i] = arg_vars[var_nm]
-                    # Omitted seed values are assumed to be zero
-                    dX[i] = arg_seed.get(var_nm, 0.0)
+                # Don't fill in missing values of X
+                X = self.parse_var_tbl(arg_vars)
+                # Fill in missing values in dX with 0
+                dX = self.parse_var_tbl(arg_seed, default=0.0)
                 # print(f'X={X}')
                 # print(f'dX={dX}')
             # If we've filled in arrays X and dX at this point, check their sizes
@@ -250,7 +297,7 @@ class Fluxion:
         msg = f'argc={argc}'
         for arg in args:
             msg += f'{arg}'
-        raise ValueError('Unrecognized input type for Fluxion.parse_args.  Details:\n{msg}')
+        raise ValueError(f'Unrecognized input type for Fluxion.parse_args.  Details:\n{msg}')
 
     def calc_T(self, X) -> int:
         """Calculate the number of samples, T, from the shape of X"""
@@ -269,6 +316,11 @@ class Fluxion:
     def forward_mode(self, *args):
         """Forward mode differentiation; abstract base class"""
         raise NotImplementedError
+
+    def jacobian(self, *args):
+        """The Jacobian."""
+        val = self.val(*args)        
+        return val
 
     def diff(self, *args):
         """Call forward_mode; discard value, only keep the derivative."""
@@ -401,9 +453,11 @@ class Var(Unop):
         # If X was a scalar, bind the value
         if isinstance(X, scalar_instance_types):
             self.X = float(X)
+            self.T = 1
         else:
             self.check_forward_mode_input(X)
             self.X = X
+            self.T = self.calc_T(X)
 
     def val(self, *args):
         """Function evaluation for a variable"""
@@ -437,14 +491,6 @@ class Var(Unop):
             diff = np.ones_like(val)
         # Return both arrays
         return (val, diff)
-
-    def __call___v1(self, X: np.ndarray):
-        """
-        Make variables callable like functions.
-        Calling a variable with an input binds that value to the variable, then returns the updated variable instance.
-        """
-        self.set_val(X)
-        return self
 
     def __repr__(self):
         return f'Var({self.var_name}, {self.X})'
@@ -495,17 +541,18 @@ class Binop(Fluxion):
         # Create the list of variable names
         var_names = []
         if not isinstance(f, Const):
-            var_names += f.name
-        if not isinstance(g, Const):
-            var_names += g.name
+            var_names += [f.name]
+        if not isinstance(g, Const) and g.name not in var_names:
+            var_names += [g.name]
         self.var_names = var_names
         # Check the shapes
         if f.m != g.m:
             raise ValueError(f'In {self.__repr__()}, ms f.m={f.m} and g.m={g.m} must match for binary operation.')
         # Bind the shapes
-        (m, n) = f.shape()
-        self.m = m
-        self.n =n
+        if f.m != g.m:
+            raise ValueError(f'm on f and m must match.  f.m={f.m} g.m={g.m};')
+        self.m = f.m
+        self.n = len(self.var_names)
 
 
 class Addition(Binop):
@@ -555,8 +602,8 @@ class Subtraction(Binop):
         # (f-g)(x) = f(x) - g(x)
         f_val, f_diff = self.f.forward_mode(*args)
         g_val, g_diff = self.g.forward_mode(*args)
-        print(f'f_val = {f_val}')
-        print(f'g_val = {g_val}')
+        # print(f'f_val = {f_val}')
+        # print(f'g_val = {g_val}')
         # The function value and derivative is just the difference
         val = f_val - g_val
         diff = f_diff - g_diff
@@ -595,7 +642,7 @@ class Multiplication(Binop):
         g_val, g_diff = self.g.forward_mode(*args)
         # The function value is the product (elementwise)
         val = f_val * g_val
-        diff = f_diff * g_val + g_val * g_diff
+        diff = f_diff * g_val + f_val * g_diff
         return val, diff
 
 
