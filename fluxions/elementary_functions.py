@@ -85,21 +85,6 @@ class DifferentiableFunction(Unop):
         # Second case: some bag of arguments that the underling analytical function and its derivative can handle
         else:
             return self.func(*args), self.deriv(*args)
-#            if argc == 1:
-#                arg = args[0]
-#                # Basic case: args is a single Fluxion instance
-#                if isinstance(arg, Fluxion):
-#                    return DifferentiableInnerFunction(arg, self.func, self.deriv, self.func_name, 
-#                                                       self.var_names, self.m, self.n)
-#                if isinstance(arg, value_instance_types):
-#                    return self.func(arg), self.deriv(arg)
-
-#            # Handle the special case that f is a value object (float or array)
-#            if isinstance(f, value_instance_types):
-#                return self.func(f), self.deriv(f)
-#            else:
-#                return DifferentiableInnerFunction(f, self.func, self.deriv, self.func_name, self.var_names, self.m, self.n)
-
 
 # *************************************************************************************************
 # List of mathematical functions in numpy

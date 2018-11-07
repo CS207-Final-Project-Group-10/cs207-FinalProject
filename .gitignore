@@ -1,5 +1,6 @@
-.vscode/
-__pycache__/
+# Throwaway python files
+fluxions/debug.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -95,6 +96,9 @@ venv.bak/
 # Spyder project settings
 .spyderproject
 .spyproject
+
+# VS Code settings
+.vscode/
 
 # Rope project settings
 .ropeproject
