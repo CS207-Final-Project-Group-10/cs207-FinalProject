@@ -94,7 +94,7 @@ For example, if we wish to use the forward mode algorithm to differentiate $f(x)
   - What will be the primary challenges?
   
   Future additions to the Fluxions package include:
-  - Implementing the remaining mathematical dunder methods: __floordiv__, __mod__, __divmod__, __abs__, __round__, __trunc__, __floor__, __ceil__
+  - Implementing the remaining mathematical dunder methods: `__floordiv__`, `__mod__`,` __divmod__`, `__abs__`, `__round__`, `__trunc__`, `__floor__`, `__ceil__`
 
   - Generalizing our vectorized implementation to handle matrices, and possibly higher-dimensional tensors.
 
