@@ -382,6 +382,9 @@ class Fluxion:
         except AttributeError:
             return Division(Const(other), self)
 
+    def __pow__(self, p: int):
+        return Power(self, p)
+            
        
 # *************************************************************************************************
 class Unop(Fluxion):
