@@ -156,7 +156,7 @@ The `fluxions` package has the following directory structure:
 `fluxion_node.py` contains the definitions for the core `Fluxion` class, the unary (`Unop`) and binary (`Binop`) operator abstract classes, and all classes that implement the operators, e.g. `Addition`, `Multiplication`. (These classes are discussed further under the *Implementation Details* section, below). The abstract `DifferentiableFunction` and `DifferentiableInnerFunction` classes, as well as static objects that implement specific elementary functions, are found in `elementary_functions.py`.
 
 #### Package tests
-All tests are located in the directory *fluxions/test*. There are two primary test suites. To run all of these tests, simply navigate to the root package directory and execute:
+All tests are located in the directory *fluxions/test*. There are two primary test suites. To run all of these tests using pytest, simply navigate to the root package directory and execute:
 
 ```console
 pytest fluxions/
@@ -168,30 +168,26 @@ Or to run just one of the test suites,
 pytest fluxions/test/test_basics.py
 ```
 
-The tests are 
-    *   * Where do tests live?  How are they run?  How are they integrated?
-
 #### Example driver
-The short Python program `newtons_method.py` is a trivial example of a "driver" that uses the Fluxions library to solve a problem.  This function can be found at the top level of our repo alongside the README and LICENSE files.
-
- In this case, the problem is implementing a basic Newton's Method solver that works on functions from $\mathbb{R}$ to $\mathbb{R}$.  A fairly generic Newton's Method solver is implemented.  It takes a differentiable function (Fluxion instance) as its first input, and uses forward mode differentiation to return both the value and exact first derivative.  The example selected was finding $x$ such that $e^{x} = 10x$.  The numerical solution found after 3 iterations is x = 0.11183256.
+The short Python program `newtons_method.py` found in the package root directory is a trivial example of a "driver" that uses the `fluxions` package to solve a problem. The program illustrates how the package can be used to implement a basic Newton's Method solver that works on functions from $\mathbb{R}$ to $\mathbb{R}$. It takes a differentiable function (Fluxion instance) as its first input, and uses forward-mode differentiation to return both the value and exact first derivative.  The example selected was finding $x$ such that $e^{x} = 10x$.  The numerical solution found after 3 iterations is x = 0.11183256.
 
 ## Implementation details
+
 ### Core Data Structures
 
-We made an important policy decision early on in project development: all numerical data including inputs, outputs, and intermediate calculations is stored in `numpy` arrays.  The only class we use that persists data is the Var class; when it persists data (either at initiation time or by calling the `set_val` method), that is stored as an array.  When the expression tree is built up, each Fluxion node returns calculations as arrays.  The `Fluxion.val()` method returns a single array with the function value, and the `Fluxion.forward_mode` method returns a tuple of two arrays with the function evaluation and derivative applied to that seed value.  The driving consideration behind this decision was the capability to provide the highest possible speed and memory efficiency if a user chose to use the library on large data sets.  For the toy problems we've used in testing it hasn't yet been relevant, but it would matter.
+To optimize computational efficiency, `fluxions` was built around the `NumPy` package; all numerical data including inputs, outputs, and intermediate calculations are stored in `numpy` arrays.  The only `fluxions` class that persists data is the `Var` class; when it persists data (either at initialization or by calling the `set_val` method), that is stored as an array. 
 
-We do make light use of some built-in Python functions for parts of the code that aren't critical to performance.  When an end user passes in values for a function to be evaluated or differentiated, they can do use a Python `dict` instance.  The key in the dictionary is the variable name, the value is the value bound to that variable.  We also store the ordered list of input variables of a Fluxion as a Python `list`.
+The package makes light use of some built-in Python data structures and their methods for parts of the code that are not critical to performance. In particular, Python dictionaries are used to specify the values and seeds with which to evaluate and differentiate functions. The keys in these dictionaries are the variable names, while the values are the numeric values (whether scalar or numpy arrays) bound to that variable.
 
 ### Core Classes
 
 #### *Fluxion*
 
-The workhorse class in the design is the `Fluxion`.  This class doesn't do any real calculations per se, but it does as much of the shared book-keeping as possible so we can avoid code repetition.  When a Fluxion instance is created, it sets the tensor size attributes $m$, $n$ and $T$ (please see the next section for more details).  The initialization also sets the `name` and `var_names` attributes (please see below).
+All of the classes in this package are ultimately derived from the `Fluxion` base class.  This class doesn't do any real calculations per se, but it does as much of the shared book-keeping as possible so we can avoid code repetition.  When a Fluxion instance is created, it sets the tensor size attributes $m$, $n$ and $T$ (please see the next section for more details).  The initialization also sets the `name` and `var_names` attributes (please see below).
 
-The key things that a Fluxion instance can do are `val` and `forward_mode`.  The `val` method corresponds to function evaluation; no derivatives are calculated.  The `forward_mode` method corresponds to performing a single pass of forward mode evaluation with one seed value.  Both of these methods take as inputs `*args`, allowing them to be called with alternative footprints.  For the `val` method, ways of calling include a single numpy array `X`; and a dictionary `var_tbl` where each variable name has either a scalar value (`float` or `int`) or a numpy array.  When an array is passed, it can have shape `(n)` or `(T, n)`.  The inputs for `forward_mode` need to be sufficient to resolve both the input array $X$ as well as the seed value.  The analogous footprints include a pair of arrays, which we would label $X$ and $dX$; or a pair of dictionaries, which we could label `var_tbl` and `seed_tbl`.
+The key things that a Fluxion instance can do are `val` and `diff`.  The `val` method corresponds to function evaluation; no derivatives are calculated.  The `diff` method corresponds to performing a single pass of forward mode evaluation with one seed value.  Both of these methods take as inputs `*args`, allowing them to be called with alternative footprints.  For the `val` method, ways of calling include a single numpy array `X`; and a dictionary `var_tbl` where each variable name has either a scalar value (`float` or `int`) or a numpy array.  When an array is passed, it can have shape `(n)` or `(T, n)`.  The inputs for `diff` need to be sufficient to resolve both the input array $X$ as well as the seed value.  The analogous footprints include a pair of arrays, which we would label $X$ and $dX$; or a pair of dictionaries, which we could label `var_tbl` and `seed_tbl`.
 
-All the work of parsing these arguments for `val()` and `forward_mode` is performed in the methods `parse_args_val` and `parse_args_forward_mode`.  This is some of the more obscure code in the whole package.  Localizing this code in the Fluxion class at the very top of the inheritance hierarchy allows us to avoid duplicating it elsewhere.
+All the work of parsing these arguments for `val()` and `diff()` is performed in the methods `parse_args_val` and `parse_args_forward_mode`.  This is some of the more obscure code in the whole package.  Localizing this code in the Fluxion class at the very top of the inheritance hierarchy allows us to avoid duplicating it elsewhere.
 
 Moving on to the more substantive capabilities of a Fluxion, it overloads all of the relevant mathematical operators, including `+`, `-`, `*`, `/`, and `**`.  These are accomplished by dispatching suitable calls to instances of the class `Binop` or `Unop`.
 
@@ -221,23 +217,23 @@ Our external dependencies are listed in the file `requirements.txt`.  The highli
 
 ### Elementary Functions
 
-There were two guiding principles in the implementations of the elementary functions, i.e. basic mathematical functions that are analytically differentiable.  The first one was to do the calculations of the derivative with pencil and paper first.  The second one was to use the `numpy` implementations to do all the numerical calculations.  As a corollary, we also chose to follow `numpy` naming conventions on a one to one basis.  We ended up porting all of the mathematical functions in `numpy` where we thought porting made sense.   The full list is here: https://docs.scipy.org/doc/numpy-1.15.0/reference/routines.math.html 		As an example of some of the functions we skipped, `np.round` was omitted because it is not differentiable.
+There were two guiding principles in the implementations of the elementary functions, i.e. basic mathematical functions that are analytically differentiable.  The first one was to do the calculations of the derivative with pencil and paper first.  The second one was to use the `numpy` implementations to do all the numerical calculations.  As a corollary, we also chose to follow `numpy` naming conventions on a one to one basis.  We ended up porting all of the mathematical functions in `numpy` where we thought porting made sense.   The full list is here: https://docs.scipy.org/doc/numpy-1.15.0/reference/routines.math.html     As an example of some of the functions we skipped, `np.round` was omitted because it is not differentiable.
 
 The list of elementary functions supported is as follows:
 
-​	Trigonometric Functions: `sin, cos, tan`
+​ Trigonometric Functions: `sin, cos, tan`
 
-​	Inverse Trigonometric Functions: `arcsin, arccos, arctan`
+​ Inverse Trigonometric Functions: `arcsin, arccos, arctan`
 
-​	Miscellaneous Trigonometric Functions: `hypot, arctan2, degrees, radians, deg2rad, rad2deg`
+​ Miscellaneous Trigonometric Functions: `hypot, arctan2, degrees, radians, deg2rad, rad2deg`
 
-​	Hyperbolic Functions: `sinh, cosh, tanh, arcsinh, arccosh, arctanh`
+​ Hyperbolic Functions: `sinh, cosh, tanh, arcsinh, arccosh, arctanh`
 
-​	Exponents & Logarithms: `exp, expm1, log, log10, log2, log1p, logaddexp, logaddexp2`
+​ Exponents & Logarithms: `exp, expm1, log, log10, log2, log1p, logaddexp, logaddexp2`
 
 We used two classes to implement the elementary functions: `DifferentiableInnerFunction` and `DifferentiableFunction`.  At first this was slightly confusing to us, and we thought we needed only one class, e.g. `fl.sin` analogous to `np.sin`.  But we need our calculation graph to have one class instance for every node.  This led to a design where the `DifferentiableInnerFunction` is a `Unop` that represents a  single node on the calculation graph.  It has one input, a Fluxion `f` that can be either a value type or another Fluxion.  The `__init__` method for it binds the fluxion it depends on, plus two callables `func` and `deriv`.  As an example, when we construct a node `el_func_node = fl.sin(fl.var('x'))`for $f(x) = sin(x)$, the input `el_func_node.f`is an instance of `Var` with name 'x', and the two callables are `node.func = np.sin` and `node.deriv = np.cos`.
 
-The `DifferentiableFunction` class is what is exposed to end users.  It is essentially a factory for producing instances of `DifferentiableInnerFunction`.  The `__init__` method basically associates one of these factories with the two callables for the function and its derivatives, plus the tensor sizes and names.  As an example of how this works, 															`sin = DifferentiableFunction(np.sin, np.cos, 'sin', 'x', 1, 1)`
+The `DifferentiableFunction` class is what is exposed to end users.  It is essentially a factory for producing instances of `DifferentiableInnerFunction`.  The `__init__` method basically associates one of these factories with the two callables for the function and its derivatives, plus the tensor sizes and names.  As an example of how this works,                               `sin = DifferentiableFunction(np.sin, np.cos, 'sin', 'x', 1, 1)`
 
 
 ## Future Plans
