@@ -73,7 +73,9 @@ Consider importing the fluxions package as follows:
 import fluxions as fl
 ```
 
+The short Python program `newtons_method.py` is a trivial example of a "driver" that uses the Fluxions library to solve a problem.  This function can be found at the top level of our repo alongside the README and LICENSE files.
 
+In this case, the problem is implementing a basic Newton's Method solver that works on functions from $\mathbb{R}$ to $\mathbb{R}$.  A fairly generic Newton's Method solver is implemented.  It takes a differentiable function (Fluxion instance) as its first input, and uses forward mode differentiation to return both the value and exact first derivative.  The example selected was finding $x$ such that $e^{x} = 10x$.  The numerical solution found after 3 iterations is x = 0.11183256.
 
 
 ## Software organization
@@ -103,9 +105,10 @@ The `fluxions` package has the following directory structure:
 
 `fluxion_node.py` contains the definitions for the core `Fluxion` class, the unary (`Unop`) and binary (`Binop`) operator abstract classes, and all classes that implement the operators, e.g. `Addition`, `Multiplication`. (These classes are discussed further under the *Implementation Details* section, below). The abstract `DifferentiableFunction` and `DifferentiableInnerFunction` classes, as well as static objects that implement specific elementary functions, are found in `elementary_functions.py`.
 
-Tests for each of these two modules 
+### Testing
 
-    * Basic modules and what they do
+All tests are located in the directory fluxions/test.  There are two primary test suites.  
+
     * Where do tests live?  How are they run?  How are they integrated?
 
 
