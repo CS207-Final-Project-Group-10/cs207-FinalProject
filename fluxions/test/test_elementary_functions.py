@@ -93,7 +93,7 @@ def test_basics_singlevar():
 
 
 # ***************************************************************************************
-def __test_compositions():
+def test_compositions():
     """ TEST: composition of elementary functions:
              (i) compositions of multiple elementary functions
             (ii) compositions of elementary functions & other ops (Fluxions)
@@ -149,6 +149,6 @@ def test_basics_multivar():
 # *************************************************************************************************
 test_elementary_functions()
 test_basics_singlevar()
-# test_compositions()
+test_compositions()
 test_basics_multivar()
 
