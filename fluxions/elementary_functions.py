@@ -17,6 +17,27 @@ scalar_instance_types = (int, float)
 value_instance_types = (int, float, np.ndarray)
 
 
+
+# *************************************************************************************************
+class FluxionResult(Fluxion):
+    """Wrapper for the result of calling an elemenatry function on value objects"""
+    def __init__(self, val, diff):
+        self.m = 1
+        self.n = 0
+        self.var_names = []
+        self._val = val
+        self._diff = diff
+        
+    def val(self):
+        return self._val
+
+    def forward_mode(self):
+        return (self._val, self._diff)
+    
+    def __repr__(self):
+        return f'FluxionResult({self._val},{self._diff})'
+
+
 # *************************************************************************************************
 class DifferentiableInnerFunction(Unop):
     """A node on the calcuulation graph that is an analytically differentiable function."""
@@ -32,6 +53,7 @@ class DifferentiableInnerFunction(Unop):
         self.deriv = deriv
         # Name of this function
         self.func_name = func_name
+        self.var_names = f.var_names
     
     def val(self, *args):
         """Function evaluation for a power"""
@@ -79,12 +101,15 @@ class DifferentiableFunction(Unop):
         # Usually there will be only one argument
         argc: int = len(args)
         # Basic case: args is a single Fluxion instance
-        if argc == 1 and isinstance(args[0], Fluxion):
+        if argc == 1 and hasattr(args[0], 'val'):
             return DifferentiableInnerFunction(args[0], self.func, self.deriv, self.func_name, 
                                                self.var_names, self.m, self.n)
         # Second case: some bag of arguments that the underling analytical function and its derivative can handle
         else:
-            return self.func(*args), self.deriv(*args)
+            val = self.func(*args)
+            diff = self.deriv(*args)
+            res = FluxionResult(val, diff)
+            return res
 
 # *************************************************************************************************
 # List of mathematical functions in numpy

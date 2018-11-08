@@ -43,9 +43,9 @@ def test_basics_singlevar():
     theta_vec = np.linspace(-5,5,21) * np.pi
     
     #### TEST: passing in vector of values: "immediate" evaluation
-    _cos, _dcos = fl.cos(theta_vec)
-    _sin, _dsin = fl.sin(theta_vec)
-    _tan, _dtan = fl.tan(theta_vec)
+    _cos, _dcos = fl.cos(theta_vec).forward_mode()
+    _sin, _dsin = fl.sin(theta_vec).forward_mode()
+    _tan, _dtan = fl.tan(theta_vec).forward_mode()
     
     assert(all(_dcos == -_sin))
     assert(all(np.isclose(_tan, _sin/_cos)))
@@ -84,7 +84,7 @@ def test_basics_singlevar():
         _log_der_2 = 1/_varx.val({'x':x})
         assert(np.all((_log_der_1 == _log_der_2)))
     
-    _hypot, _hypot_der = fl.hypot(fl.sin(theta_vec), fl.cos(theta_vec))
+    _hypot, _hypot_der = fl.hypot(fl.sin(theta_vec).val(), fl.cos(theta_vec).val()).forward_mode()
     assert(np.all(_hypot == np.ones_like(theta_vec)))
 
     # test arccos vs. sec?
@@ -102,23 +102,25 @@ def __test_compositions():
     
     # composition of 2 elementary functions: 
     # (a) immediate evaluation
-    val_diff_result = fl.log(fl.exp(theta_vec)[0])
-    assert(all( val_diff_result[0] == theta_vec ))
-    assert(all( val_diff_result[1] == 1/fl.exp(theta_vec)[0] )) 
+    val, diff = fl.log(fl.exp(theta_vec)).forward_mode()
+    assert(np.all(val == theta_vec ))
+    assert(np.all(np.isclose(diff, 1.0)))
     
     # (b) delayed evaluation
     logexp = fl.log(fl.exp(fl.Var('theta')))
-    assert(all( logexp.val({'theta':theta_vec}) == theta_vec ))
-    assert(all( logexp.diff({'theta':theta_vec}) == np.ones_like(theta_vec) ))
+    assert(np.all(logexp.val({'theta':theta_vec}) == theta_vec ))
+    assert(np.all(np.isclose(logexp.diff({'theta':theta_vec}), np.ones_like(theta_vec))))
     
     # composition of elementary functions and basic ops (other Fluxions)
     # (a) immediate evaluation
-    assert(all( fl.cos(theta_vec)**2 - fl.sin(theta_vec)**2 == fl.cos(2*theta_vec) ))
+    ans_1 = fl.cos(theta_vec).val()**2 - fl.sin(theta_vec).val()**2
+    ans_2 = fl.cos(2*theta_vec).val()
+    assert(np.all(np.isclose(ans_1, ans_2)))
     
     # (b) delayed evaluation
     theta = fl.Var('theta', theta_vec)    
     f = fl.cos(theta)**2 - fl.sin(theta)**2
-    assert(all( f.val({'theta':theta_vec}) == fl.cos(2*theta_vec) ))
+    assert(np.all(np.isclose(f.val({'theta':theta_vec}), fl.cos(2*theta_vec).val())))
     
     
     report_success()

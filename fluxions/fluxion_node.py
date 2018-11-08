@@ -533,7 +533,7 @@ class Power(Unop):
         return (val, diff)
 
     def __repr__(self):
-        return f'Power({self.f.var_name}, {self.p})'
+        return f'Power({self.f.name}, {self.p})'
 
 
 # *************************************************************************************************
