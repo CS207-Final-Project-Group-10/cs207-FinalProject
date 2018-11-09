@@ -247,22 +247,38 @@ While the elementary function objects are instances of the `DifferentiableFuncti
 
 The `DifferentiableInnerFunction` class has one input, a Fluxion `f` that can be either a value type or another Fluxion.  Its `__init__` method binds this other Fluxion, plus two callables `func` and `deriv`.  As an example, when we construct a node `elem_func_node = fl.sin(fl.Var('x'))`for $f(x) = sin(x)$, the input `elem_func_node.f`is an instance of `Var` with name 'x', and the two callables are `node.func = np.sin` and `node.deriv = np.cos`.
 
-The `DifferentiableFunction` class is what is exposed to end users.  It is essentially a factory for producing instances of `DifferentiableInnerFunction`.  The `__init__` method basically associates one of these factories with the two callables for the function and its derivatives, plus the tensor sizes and names.  As an example of how this works,                               `sin = DifferentiableFunction(np.sin, np.cos, 'sin', 'x', 1, 1)`
+The `DifferentiableFunction` class is what is exposed to users. It is essentially a factory for producing instances of `DifferentiableInnerFunction`.  The `__init__` method associates one of these factories with the two callables for the function and its derivatives, plus the tensor sizes and names. That the elementary functions are all created from the DifferentiableFunction class allows users to create additional differentiable functions as desired.
 
 
 ## Future Plans
-### Core Features Not Yet Implemented and Plan to Add
+### Features to be Added
 
-We are still in the process of fully handling vectorization.  The core calculations in forward mode currently support computing the partial of a function $f$ from $\mathbb{R}^n$ to $\mathbb{R}$, but we have not yet handled the fully generalized case of function from $\mathbb{R}^n$ to $\mathbb{R}^m $.  
+- We are still in the process of fully handling vectorization.  The core calculations in forward mode currently support computing the partial of a function $f$ from $\mathbb{R}^n$ to $\mathbb{R}$, but we have not yet handled the fully generalized case of function from $\mathbb{R}^n$ to $\mathbb{R}^m $.
 
-We can compute a forward mode differentiation for an arbitrary seed value.  We plan to add convenience methods that will return three quantities of common interest to end users:
+- Function implementations need to be updated so that output values are consistent in structure. As currently implemented, if a scalar is bound to a Var, and a call to the val() or diff() of a function built around that Var instance is made, a scalar is returned. e.g.,
+
+```python
+>>> fl.exp(fl.Var(‘x’, 0)).val() 
+1.0
+```
+
+However, if a generic Var that not yet bound to a value is used, and the named variable is bound to a value at the time that the function’s val() or diff() is called, an array containing a scalar is instead returned.
+
+```python
+>>> fl.exp(fl.Var(‘x’)).val({‘x’:0})
+array([1.0])
+```
+
+- Functions of a single variable should be able to be passed numeric values, rather than having to bind those values to a variable name. For instance,  users should be allowed to call `fl.exp(0)` or `fl.exp(numpy.zeros(10))', rather than `fl.exp( Var('x') ).val( {'x':0} )`. We will have to decide on what the correct return type should be; while our API specifies that a Fluxion will return a tuple with the values of both the function and its derivative by default, we will have to ensure that doing so does not disrupt the behavior of nested functions. For instance, this clearly will not work if one were to call `fl.cos(0)**2 + fl.sin(0)**2`.
+
+- We plan to add convenience methods that will return three quantities of common interest to end users:
 
   - `jacobian(X)`, the Jacobian of the function evaluated at inputs $X$
   - `hessian(X)`, the Hessian of the function evaluated at inputs $X$
   - `partial(var_name, X)`, the partial derivative of the function with respect to the named variable, when evaluated at inputs $X$
   - `Stack([fs])` would be a constructor for a Fluxion that mapped from $\mathbb{R^n}$ to $\mathbb{R^m}$.  It would take as input a Python list of Fluxion instances.  In the initial implementation, each function $f$ in the list would need to share the same input variables.  Eventually the function arguments could be merged.  The resulting function $F$ would have $F_i = fs[i]$, that is the scalar valued function $f_i$ would be the $i^{th}$ component of $F$ in $\mathbb{R^m}$.
 
-We are having team discussions about whether to implement the remaining mathematical dunder methods: `__floordiv__`, `__mod__`,` __divmod__`, `__abs__`, `__round__`, `__trunc__`, `__floor__`, `__ceil__`.  Arguments in favor are that they are built-in methods that apply to numerical objects.  The main argument against is that they are not differentiable functions.
+- We are having team discussions about whether to implement the remaining mathematical dunder methods: `__floordiv__`, `__mod__`,` __divmod__`, `__abs__`, `__round__`, `__trunc__`, `__floor__`, `__ceil__`.  Arguments in favor are that they are built-in methods that apply to numerical objects.  The main argument against is that they are not differentiable functions.
 
 ### Value Added Features
 
@@ -287,13 +303,3 @@ We decided early on to infer the size of an input array when possible.  For exam
 While this is a convenient convention for end users consuming the functions, it has led to some obscure code where we are trying to infer the tensor ranks and shapes of Fluxions in multiple places.  We have a proposal to streamline this by having the calculations done with implementation methods that always take as inputs and outputs arrays with all indices, even if they are 1.  All function inputs would have shapes `(T, n)`, all value outputs shape `(T, m)`, forward_mode output with one seed value would also have shape `(T, m)`, and the Jacobian would have shape `(T, m, n)`.  For example, the Fluxion class would do this in a val_impl() method.  Then the public interface val() would dispatch a call to val_impl(), and apply np.squeeze() to the results.
 
 Another pending change has to due with the composition of Fluxions that include elementary functions.  This is not currently working the way we want it to.  The cause of the issue stems from trying to make `fl.sin(np.vector[0, 1, 2])` return values for immediate use.  While you might want to see 0.0 or (0.0, 1.0) on the screen when you call `fl.sin(0)`, that setup has interfered with compositions when an elementary function is on an inner node.  We have a pending proposal to address this.  To see immediate answers on the screen, a user would need to type `fl.sin(0.val())`.  `fl.sin(0)` would return the somewhat obscure looking `fl(Const(0))`, but that would make elementary function nodes fully composable.
-
-### Primary Challenges
-
-The main challenges in writing this package so far have been very different from the main concepts that drive differentiation in forward mode.  This has been surprising to us.  The core mathematics including the chain rule, product and quotient rules, and the derivatives of elementary functions have been a breeze.  The messiest part of our code has been dealing with the various book-keeping of parsing inputs in different formats.  At the very start we opted to allow users to provide inputs in different formats including numpy arrays, dictionaries with variable values bound to their names, and lists of values passed by position.  This will make the end product more convenient to use, but has led to complexities in the argument parsing and variable binding sections of the code.
-
-A second challenge has been vectorization.  Getting things up and running quickly for functions from $\mathbb{R}$ to $\mathbb{R}$ proved much simpler than adding support for vectorizing for inputs in $\mathbb{R^n}$.  One source of confusion for us was that for functions with only one input, there is no real need to specify a seed value, because the only seed of interest is effectively $dx=1$ which corresponds to $\partial f / \partial x = f'(x)$.  This meant that we prototyped some of our code base with an API where we didn't clearly pass in a seed value, but just used this default.  Eventually we figured this out and updated our APIs and logic.
-
-Learning to use new tools effectively has been rewarding but also at times tough.  Everyone on the team has had a solid amount of experience writing Python code at this point.  We've been using Git all semester, but using Git to version control your files and synchronize between your laptop and your desktop is much, much easier than using Git to collaborate with other people!  In a similar vein, we've been learning to use tools like pytest and coverage testing on small assignments we write on our own.  Getting an automated testing suite working on Travis with coverage testing on Coveralls has been worthwhile but required an effort.  These tools also led us to a slew of challenges relating to module and package imports.  We had a module and package configuration that worked fine for all of us on our local machines, but when we tried to get our tests to run on Travis we were hitting a number of confusing errors in import statements.  Finally we ended up solving this issue, including with some slightly obscure code that runs import statements differently depending on whether a module is being run as an import or run as `__main__`.  Looking at it now, this seems clear, but at the time it was confusing and consumed many hours and Stack Overflow searches.
-
-Perhaps the most substantive challenge has been learning to work together efficiently.  We are fortunate in that everyone on the team has been working hard, getting along, and contributing.  But we've had multiple situations where one person wrote code that another person on the team had trouble understanding when their work tasks overlapped.  Two examples of this were the overlap between name binding / argument parsing and vectorization, and elementary functions and testing.  With the benefit of hindsight, our team probably would have benefited if we had been more deliberate about first writing down an API and test cases before we implemented anything.  The optimal level of advanced planning and process deliberation on a team of 4 has proven to be much higher than on a solo project or pair effort.
