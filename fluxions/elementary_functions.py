@@ -1,11 +1,10 @@
-import importlib
 import numpy as np
+from importlib import util
 # Handle import of classes in fluxion_node differently based on import as module or run from test
-if importlib.util.find_spec("fluxions") is not None:
+if util.find_spec("fluxions") is not None:
     from fluxions import Fluxion, Unop
 else:
     from fluxion_node import Fluxion, Unop
-
 
 # Types and type aliases
 from typing import List, Callable, Union

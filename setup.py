@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="fluxions",
-    version="0.0.4",
+    version="1.0.1",
     author="Harvard CS207 Final Project Group 10",
     description="A package for Automatic Differentiation",
     long_description=long_description,
