@@ -67,19 +67,6 @@ class Fluxion:
         """The shape of this fluxion according to numpy standard"""
         return (self.m, self.n)
 
-    # Set sizes
-    def set_m(self, m: int) -> None:
-        """Set the number of output dimensions"""
-        self.m = m
-
-    def set_n(self, n: int) -> None:
-        """Set the number of input dimensions"""
-        self.n = n
-
-    def set_T(self, T: int) -> None:
-        """Set the number of samples, T"""
-        self.T = T
-
     # Set the order of variables so this fluxion can be callable
     def set_var_names(self, var_names: List[str]):
         """Update the ordered list of variable names, _var_names."""
