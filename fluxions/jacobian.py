@@ -21,22 +21,22 @@ import numpy as np
     # J(F) = [[cos(theta), -r*sin(theta)],[sin(theta), r*cos(theta)]]
 
 """
-def jacobian(f, vars, vars_mapping):
+def jacobian(f, v, vars_mapping):
     """
         f: single fluxion object or an array or list of fluxions, representing a scalar or vector function
-        vars: vector of variables in f with respect to which the Jacobian will be calculated
-        vars_mapping: dict mapping variables in f to scalar or vector of values
+        v: vector of variables in f with respect to which the Jacobian will be calculated
+        v_mapping: dict mapping variables in f to scalar or vector of values
 
     """
     
     f = np.asarray(f)
-    vars = np.asarray(vars)
+    v = np.asarray(v)
     
-    J = np.zeros((len(f.ravel()),len(vars)))
+    J = np.zeros((len(f.ravel()),len(v)))
     for i, f_i in enumerate(f):
-        for j, v_j in enumerate(vars):
+        for j, v_j in enumerate(v):
             # make seed dict
-            seed = dict.fromkeys(vars, 0)
+            seed = dict.fromkeys(v, 0)
             seed[v_j] = 1
 
             J[i,j] = f_i.diff(vars_mapping, seed)
