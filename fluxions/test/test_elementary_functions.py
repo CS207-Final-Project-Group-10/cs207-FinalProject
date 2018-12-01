@@ -22,7 +22,7 @@ def test_elementary_functions():
     # Create a variable theta with angles from 0 to 360 degrees, with values in radians
     theta_val = np.linspace(0, 2*np.pi, 361)
     theta = fl.Var('theta')
-    
+
     # Scalar version
     f_theta = fl.sin(theta)
     assert f_theta.val({'theta':2}) == np.sin(2)
@@ -41,32 +41,32 @@ def test_elementary_functions():
 # ***************************************************************************************
 def test_basics_singlevar():
     theta_vec = np.linspace(-5,5,21) * np.pi
-    
+
     #### TEST: passing in vector of values: "immediate" evaluation
     _cos, _dcos = fl.cos(theta_vec).forward_mode()
     _sin, _dsin = fl.sin(theta_vec).forward_mode()
     _tan, _dtan = fl.tan(theta_vec).forward_mode()
-    
+
     assert(all(_dcos == -_sin))
     assert(all(np.isclose(_tan, _sin/_cos)))
-    
-    
+
+
     #### TEST: passing a fluxion Var: "delayed" evaluation
-    
+
     theta = fl.Var('theta')
     _cos = fl.cos(theta)
     _sin = fl.sin(theta)
-    
+
     assert(np.all(np.isclose(_sin.diff({'theta':theta_vec}), np.cos(theta_vec))))
     assert(np.all(_cos.diff({'theta':theta_vec}) == -1*_sin.val({'theta':theta_vec})))
-    
-    
+
+
     #### TEST: basic functionality of other elementary functions
     # tan' = sec^2
     _dtan = (fl.tan(theta)).diff({'theta':theta_vec})
     _sec2 = ((1/fl.cos(theta))**2).val({'theta':theta_vec})
     assert(np.all(np.isclose(_dtan, _sec2)))
-    
+
     # test Fluxions returns NaN as numpy does
     x = np.linspace(-5,5,21)
     _varx = fl.Var('x')
@@ -83,7 +83,7 @@ def test_basics_singlevar():
         _log_der_1 = _log.diff({'x':x})
         _log_der_2 = 1/_varx.val({'x':x})
         assert(np.all((_log_der_1 == _log_der_2)))
-    
+
     _hypot, _hypot_der = fl.hypot(fl.sin(theta_vec).val(), fl.cos(theta_vec).val()).forward_mode()
     assert(np.all(_hypot == np.ones_like(theta_vec)))
 
@@ -99,48 +99,48 @@ def test_compositions():
             (ii) compositions of elementary functions & other ops (Fluxions)
     """
     theta_vec = np.linspace(-5,5,21) * np.pi
-    
-    # composition of 2 elementary functions: 
+
+    # composition of 2 elementary functions:
     # (a) immediate evaluation
     val, diff = fl.log(fl.exp(theta_vec)).forward_mode()
     assert(np.all(val == theta_vec ))
     assert(np.all(np.isclose(diff, 1.0)))
-    
+
     # (b) delayed evaluation
     logexp = fl.log(fl.exp(fl.Var('theta')))
     assert(np.all(logexp.val({'theta':theta_vec}) == theta_vec ))
     assert(np.all(np.isclose(logexp.diff({'theta':theta_vec}), np.ones_like(theta_vec))))
-    
+
     # composition of elementary functions and basic ops (other Fluxions)
     # (a) immediate evaluation
     ans_1 = fl.cos(theta_vec).val()**2 - fl.sin(theta_vec).val()**2
     ans_2 = fl.cos(2*theta_vec).val()
     assert(np.all(np.isclose(ans_1, ans_2)))
-    
+
     # (b) delayed evaluation
-    theta = fl.Var('theta', theta_vec)    
+    theta = fl.Var('theta', theta_vec)
     f = fl.cos(theta)**2 - fl.sin(theta)**2
     assert(np.all(np.isclose(f.val({'theta':theta_vec}), fl.cos(2*theta_vec).val())))
-    
-    
+
+
     report_success()
 
 
 # ***************************************************************************************
 def test_basics_multivar():
-    """ TEST: elementary functions of multiple variables """ 
+    """ TEST: elementary functions of multiple variables """
     theta_vec = np.linspace(-5,5,21) * np.pi
-    
+
     sin_z = fl.sin( fl.Var('x') * fl.Var('y') )
     assert(np.all(np.isclose(sin_z.val({'x':theta_vec, 'y':theta_vec}), np.sin(theta_vec**2))))
-    
+
     #WHAT TO DO WHEN TOO FEW VARS PASSED? 
     # sin_z.val({'x':theta_vec})
-    
+
     # HOW ARE PARTIALS EVALUATED?
     # sin_z.diff({'x': theta_vec})
     # sin_z.diff({'x': theta_vec, 'y': theta_vec*2})
-    
+
     report_success()
 
 
