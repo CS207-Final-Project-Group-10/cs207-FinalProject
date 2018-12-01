@@ -25,8 +25,8 @@ def test_basic_usage():
 
     #f0 = x - 1
     f0 = x - 1
-    # assert(f0.val({'x':1}) == 0)
-    # assert(f0.diff({'x':1}) == 1)
+    assert(f0.val({'x':1}) == 0)
+    assert(f0.diff({'x':1}) == 1)
     var_tbl = {'x':1}
     seed_tbl = {'x':1}
     val, diff = f0.forward_mode(var_tbl, seed_tbl)
@@ -122,8 +122,9 @@ def test_basics_vectors():
     xs = np.linspace(0,1,num=n)
     ys = np.linspace(1,2,num=n)
 
-    # Create a variable, x bound to vector value
+    # Create variables x and y bound to vector values
     x = fl.Var('x', xs)
+    y = fl.Var('y', ys)
 
     # f1(x) = 5x
     f1 = 5 * x
@@ -138,7 +139,6 @@ def test_basics_vectors():
     assert(f2.diff({'x':xs}) == 2.0*xs).all()
 
     # f3(y) = (1 + y)/(y * y)
-    y = fl.Var('y', ys)
     f3 = (1 + y) / (y * y)
     f3.set_var_names('y')
     assert(f3.val({'y':ys}) == np.divide(1+ys,np.power(ys,2))).all()
@@ -164,8 +164,6 @@ def test_basics_vectors():
     # f(x,y) = 5xy
     f6 = 5 * x * y
     assert(f6.val(var_tbl_scalar) == 30)
-    # assert(f6.diff(var_tbl_scalar, {'x':1}) == np.array([15, 10])).all()
-    args = (var_tbl_scalar, {'y':1})
     assert(f6.diff(var_tbl_scalar, {'x':1}) == np.array([15])).all()
     assert(f6.diff(var_tbl_scalar, {'y':1}) == np.array([10])).all()
     assert(f6.val(var_tbl_vector) == np.multiply(5*xs,ys)).all()
