@@ -1,5 +1,10 @@
-
 import numpy as np
+from importlib import util
+# Handle import of classes in fluxion_node differently based on import as module or run from test
+if util.find_spec("fluxions") is not None:
+    from fluxions import Fluxion
+else:
+    from fluxion_node import Fluxion
 
 
 def _check_input_vals(v_mapping):
@@ -53,6 +58,8 @@ def jacobian(f, v, v_mapping):
         v_mapping: dict mapping variables in f to scalar or vector of values
 
     """    
+    if isinstance(f, Fluxion):
+        f = [f]
     f = np.asarray(f)
     v = np.asarray(v)
     v_mapping = _check_input_vals(v_mapping)
