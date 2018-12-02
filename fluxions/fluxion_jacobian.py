@@ -58,6 +58,7 @@ def jacobian(f, v, v_mapping):
         v_mapping: dict mapping variables in f to scalar or vector of values
 
     """    
+    # make sure f is in the form np.array([fl1, ...])
     if isinstance(f, Fluxion):
         f = [f]
     f = np.asarray(f)
