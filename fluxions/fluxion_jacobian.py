@@ -65,18 +65,15 @@ def jacobian(f, v, v_mapping):
     v = np.asarray(v)
     v_mapping = _check_input_vals(v_mapping)
 
-    m = len(f)
-    n = len(v)
+    m = len(v)
+    n = len(f)
     T = len(list(v_mapping.values())[0]) # number of values per variable
     
     J = np.zeros((m,n,T))
     for i, f_i in enumerate(f):
-        for j, v_j in enumerate(v):
-            # make seed dict
-            seed = dict.fromkeys(v, 0)
-            seed[v_j] = 1
-
-            dfi_dvj = f_i.diff(v_mapping, seed)
-            J[i,j,:] = dfi_dvj
+        seed = dict.fromkeys(v, 1)
+            
+        dfi_dvj = f_i.diff(v_mapping, seed)
+        J[:,i,:] = dfi_dvj.T
 
     return J.squeeze()

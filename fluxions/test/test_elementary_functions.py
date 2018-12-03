@@ -20,7 +20,7 @@ def report_success():
 # ***************************************************************************************
 def test_elementary_functions():
     # Create a variable theta with angles from 0 to 360 degrees, with values in radians
-    theta_val = np.linspace(0, 2*np.pi, 361)
+    theta_val = np.expand_dims(np.linspace(0, 2*np.pi, 361), axis=1)
     theta = fl.Var('theta')
 
     # Scalar version
@@ -40,12 +40,12 @@ def test_elementary_functions():
 
 # ***************************************************************************************
 def test_basics_singlevar():
-    theta_vec = np.linspace(-5,5,21) * np.pi
+    theta_vec = np.expand_dims(np.linspace(-5,5,21) * np.pi, axis=1)
 
     #### TEST: passing in vector of values: "immediate" evaluation
-    _cos, _dcos = fl.cos(theta_vec).forward_mode()
-    _sin, _dsin = fl.sin(theta_vec).forward_mode()
-    _tan, _dtan = fl.tan(theta_vec).forward_mode()
+    _cos, _dcos = fl.cos(theta_vec)()
+    _sin, _dsin = fl.sin(theta_vec)()
+    _tan, _dtan = fl.tan(theta_vec)()
 
     assert(all(_dcos == -_sin))
     assert(all(np.isclose(_tan, _sin/_cos)))
@@ -78,13 +78,13 @@ def test_basics_singlevar():
     with np.warnings.catch_warnings():
         np.warnings.filterwarnings('ignore')
         _log_fl = _log.val({'x':x})
-        _log_np = np.log(x)
+        _log_np = np.expand_dims(np.log(x), axis=1)
         assert(np.all((_log_fl == _log_np) | (np.isnan(_log_fl) == np.isnan(_log_np))))
         _log_der_1 = _log.diff({'x':x})
         _log_der_2 = 1/_varx.val({'x':x})
         assert(np.all((_log_der_1 == _log_der_2)))
 
-    _hypot, _hypot_der = fl.hypot(fl.sin(theta_vec).val(), fl.cos(theta_vec).val()).forward_mode()
+    _hypot, _hypot_der = fl.hypot(fl.sin(theta_vec).val(), fl.cos(theta_vec).val())()
     assert(np.all(_hypot == np.ones_like(theta_vec)))
 
     # test arccos vs. sec?
@@ -98,11 +98,11 @@ def test_compositions():
              (i) compositions of multiple elementary functions
             (ii) compositions of elementary functions & other ops (Fluxions)
     """
-    theta_vec = np.linspace(-5,5,21) * np.pi
+    theta_vec = np.expand_dims(np.linspace(-5,5,21) * np.pi, axis=1)
 
     # composition of 2 elementary functions:
     # (a) immediate evaluation
-    val, diff = fl.log(fl.exp(theta_vec)).forward_mode()
+    val, diff = fl.log(fl.exp(theta_vec))()
     assert(np.all(val == theta_vec ))
     assert(np.all(np.isclose(diff, 1.0)))
 
@@ -129,7 +129,7 @@ def test_compositions():
 # ***************************************************************************************
 def test_basics_multivar():
     """ TEST: elementary functions of multiple variables """
-    theta_vec = np.linspace(-5,5,21) * np.pi
+    theta_vec = np.expand_dims(np.linspace(-5,5,21) * np.pi, axis=1)
 
     sin_z = fl.sin( fl.Var('x') * fl.Var('y') )
     assert(np.all(np.isclose(sin_z.val({'x':theta_vec, 'y':theta_vec}), np.sin(theta_vec**2))))
