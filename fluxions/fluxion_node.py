@@ -145,8 +145,8 @@ class Fluxion:
         # If we reach here, we either got ARGS or KWARGS
         if argc == 2 * m:
             # Initialize X and dX in the correct shape
-            X = np.array(args[m:0])
-            dX = np.array(args[m:2*n])
+            X = np.array(args[0:m],dtype=np.float64)
+            dX = np.array(args[m:2*m],dtype=np.float64)
             # Reevaluate the two arrays
             return self._parse_args_forward_mode(X, dX)
         # KWARGS not yet supported
@@ -231,6 +231,10 @@ class Fluxion:
         shape = X.shape
         tensor_rank = len(shape)
         T = self._check_forward_mode_input_array(X)
+        if tensor_rank == 0:
+            #there is only 1 var name, so this will only run once
+            for var_name in self.var_names:
+                arg_vars[var_name] = X
         if tensor_rank == 1 and T == shape[0]:
             #there is only 1 var name, so this will only run once
             for var_name in self.var_names:
@@ -260,7 +264,7 @@ class Fluxion:
                 t = self._calc_T_var(val)
             #case 3: throw an error
             else:
-                raise ValueError(f'val={val} in var_tbl; not a recognized value type.')
+                raise ValueError(f'val={val} in var_tbl; {type(val)} not a recognized value type.')
             #update T
             if t > 1 and T == 1:
                 T = t
@@ -279,9 +283,12 @@ class Fluxion:
         # Get the shape and tensor rank
         shape = X.shape
         tensor_rank = len(shape)
+        T = 0
         # Only 1D and 2D arrays are supported
-        if tensor_rank not in (1, 2):
+        if tensor_rank not in (0, 1, 2):
             raise ValueError(f'Shape of X = {X.shape}. Numpy array must be a 1D vector or 2D matrix')        
+        if tensor_rank == 0:
+            T = 1
         # If the input was a 1D vector, its length must EITHER (1) be T, or (2) m, with T == 1
         if tensor_rank == 1 and (shape[0] != self.m) and self.m != 1:
             raise ValueError(f'Error: X has shape {X.shape}, incompatible with m = {self.m} on fluxion.')
@@ -293,13 +300,12 @@ class Fluxion:
         # If the input was a 2D vector, it must be of shape Txn
         if tensor_rank == 2 and (shape[1] != self.m):
             raise ValueError(f'Error: X has shape {X.shape}, incompatible with m = {self.m} on fluxion.')
-        T = shape[0]
+        if tensor_rank == 2:
+            T = shape[0]
         return T
 
     def _calc_T_var(self,X) -> int:
         """Calculate the number of samples, T, from the shape of X"""
-        if isinstance(X,scalar_instance_types):
-            return 1
         shape = X.shape
         tensor_rank: int = len(shape)
         if tensor_rank == 0:
@@ -515,16 +521,7 @@ class Multiplication(Binop):
         g_val, g_diff = self.g._forward_mode(*args)
         val = f_val * g_val
         # The function value is the product (elementwise)
-        try:
-            return (val, f_val * g_diff + f_diff * g_val)
-        except (ValueError):
-            leftsum = np.zeros(np.shape(g_diff))
-            for i, (f,g) in enumerate(zip(f_val,g_diff)):
-                leftsum[i]=f*g
-            rightsum = np.zeros(np.shape(f_diff))
-            for i, (f,g) in enumerate(zip(f_diff,g_val)):
-                rightsum[i]=f*g
-            return (val, leftsum + rightsum)
+        return (val, f_val * g_diff + f_diff * g_val)
 
     def __repr__(self):
         return f'Multiplication({str(self.f)}, {str(self.g)})'
@@ -544,21 +541,7 @@ class Division(Binop):
         f_val, f_diff = self.f._forward_mode(*args)
         g_val, g_diff = self.g._forward_mode(*args)
         val = f_val / g_val
-        try:
-            return (val, (f_diff * g_val - f_val * g_diff) / (g_val * g_val))
-        except (ValueError):
-            leftsum = np.zeros(np.shape(g_diff))
-            for i, (f,g) in enumerate(zip(f_diff,g_val)):
-                leftsum[i]=f*g
-            rightsum = np.zeros(np.shape(f_diff))
-            for i, (f,g) in enumerate(zip(f_val,g_diff)):
-                rightsum[i]=f*g
-            numerator = leftsum - rightsum
-            denominator = np.power(g_val,2)
-            quotient = np.zeros(np.shape(numerator))
-            for i, (n,d) in enumerate(zip(numerator,denominator)):
-                quotient[i]=n/d
-            return (val, quotient)
+        return (val, (f_diff * g_val - f_val * g_diff) / (g_val * g_val))
 
     def __repr__(self):
         return f'Division({str(self.f)}, {str(self.g)})'
@@ -627,17 +610,6 @@ class Var(Fluxion):
         # get the number of arguments and inputs
         argc: int = len(args)
 
-        # Return the arrays of argument values
-        if argc == 0:
-            return (None,None)
-        if argc == 1:
-            arg_vars = args[0]
-            if arg_vars is None:
-                return (None,None)
-            else:
-                X = self._parse_vars_tbl(arg_vars)
-                # Return the arrays of argument values
-                return (X,None)
         if argc == 2:
             arg_vars = args[0]
             arg_seed = args[1]

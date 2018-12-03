@@ -38,6 +38,9 @@ def test_basic_usage():
     f1 = 5 * x
     # Evaluate f1(x) at the bound value of x
     assert(f1() == (5.0, 5.0))
+    assert(f1(None)==(5.0, 5.0))
+    assert(f1(1,1) == (5.0, 5.0))
+    assert(f1(np.array(1),np.array(1)) == (5.0, 5.0))
     # Evaluate f1(x) using function calling syntax
     assert(f1(2) == (10.0, 5.0))
     # Evaluate f1(x) using dictionary binding syntax
@@ -100,6 +103,9 @@ def test_basic_usage():
     y = fl.Var('y')
     f9 = -(x * y)
     assert(f9.val({'x':-2, 'y':3}) == 6)
+    val, diff = f9(1,1,1,1)
+    assert(val == np.array([[-1.]]))
+    assert(val == np.array([[-1., -1.]])).all()
 
 # Report results
 report_success()
@@ -162,6 +168,9 @@ def test_basics_vectors():
     var_tbl_vector = {'x':xs,'y':xs,'z':xs}
     assert(f7.val(var_tbl_vector) == 3*xs + 2*xs + xs).all()
     assert(f7.diff(var_tbl_vector) == np.asarray([np.array([3, 2, 1])]*10)).all()
+    var_tbl_vector = {'z':xs}
+    f7.val(var_tbl_vector)
+    assert(f7.val(var_tbl_vector) == 3*xs + 2*xs + xs+2).all()
 
     # f(x,y,z) = (3x+2y+z)/xyz
     f8 = (x * 3 + 2 * y + z)/(x * y * z)
