@@ -36,6 +36,7 @@ def test_basic_usage():
 
     # f1(x) = 5x
     f1 = 5 * x
+    assert(f1.shape() == (1, 1))
     # Evaluate f1(x) at the bound value of x
     assert(f1() == (5.0, 5.0))
     assert(f1(None)==(5.0, 5.0))
@@ -127,6 +128,9 @@ def test_basics_vectors():
     f1 = 5 * x
     assert(f1.val(xs) == 5*xs).all()
     assert(f1.diff({'x':xs}) == 5.0*np.ones(np.shape(xs))).all()
+    val,diff = f1(ys)
+    assert(val == 5.0*ys_ex).all()
+    assert(diff == 5.0*np.ones(np.shape(xs))).all()
 
     # f2(x) = 1 + (x * x)
     f2 = 1 + x * x
