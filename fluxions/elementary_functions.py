@@ -178,7 +178,7 @@ arccos = DifferentiableFunctionFactory(np.arccos, _deriv_arccos, 'arccos')
 # The derivative of arctan is 1 / (1+x^2)
 def _deriv_arctan(x):
     """The derivative of arctan(x)"""
-    return 1.0 / (1.0 + x*2)
+    return 1.0 / (1.0 + x*x)
 
 arctan = DifferentiableFunctionFactory(np.arctan, _deriv_arctan, 'arctan')
 
@@ -202,7 +202,7 @@ def _deriv_hypot(x, y):
     r = np.hypot(x, y)
     df_dx = x / r
     df_dy = y / r
-    return np.vstack([df_dx, df_dy]).T
+    return np.hstack([df_dx, df_dy])
 
 hypot = DifferentiableFunctionFactory(np.hypot, _deriv_hypot, 'hypot')
 
@@ -213,7 +213,7 @@ def _deriv_arctan2(y, x):
     r2 = x*x + y*y
     df_dy = x / r2
     df_dx = -y / r2
-    return np.vstack([df_dy, df_dx].T)
+    return np.hstack([df_dy, df_dx])
 
 
 arctan2 = DifferentiableFunctionFactory(np.arctan2, _deriv_arctan2, 'arctan2')
@@ -256,7 +256,7 @@ cosh = DifferentiableFunctionFactory(np.cosh, np.sinh, 'cosh')
 def _deriv_tanh(x):
     """Derivative of tanh(x)"""
     cx = np.cosh(x)
-    return 1.0 / cx * cx
+    return 1.0 / (cx * cx)
 
 tanh = DifferentiableFunctionFactory(np.tanh, _deriv_tanh, 'tanh')
 
@@ -368,3 +368,35 @@ def _deriv_logaddexp2(x1, x2):
     return np.vstack([df_dx1, df_dx2]).T
 
 logaddexp2 = DifferentiableFunctionFactory(np.logaddexp2, _deriv_logaddexp2, 'logaddexp2')
+
+# *************************************************************************************************
+# Miscellaneous Functions
+# (Most these functions are not differentiable; the three below are the ones where a 
+# derivative exists.
+# sqrt
+# cbrt
+# square
+
+
+# The derivative of sqrt(x) = x^(1/2) is (1/2)x^(-1/2)
+def _deriv_sqrt(x):
+    """The derivative of sqrt(x)"""
+    return 0.5 / np.sqrt(x)
+
+sqrt = DifferentiableFunctionFactory(np.sqrt, _deriv_sqrt, 'sqrt')
+
+
+# The derivative of cbrt(x) = x^(1/3) is (1/3)x^(-2/3) = (1/3) / x^(2/3) = (1/3) / cbrt(x^2)
+def _deriv_cbrt(x):
+    """The derivative of cbrt(x)"""
+    return (1.0 / 3.0) / np.cbrt(x*x)
+
+cbrt = DifferentiableFunctionFactory(np.cbrt, _deriv_cbrt, 'cbrt')
+
+# The derivative of square(x) = x^2 is 2x
+def _deriv_square(x):
+    """The derivative of square(x)"""
+    return 2.0 * x
+
+square = DifferentiableFunctionFactory(np.square, _deriv_square, 'square')
+
