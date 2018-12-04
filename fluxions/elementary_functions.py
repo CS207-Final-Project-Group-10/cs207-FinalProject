@@ -2,9 +2,9 @@ import numpy as np
 from importlib import util
 # Handle import of classes in fluxion_node differently based on import as module or run from test
 if util.find_spec("fluxions") is not None:
-    from fluxions import Fluxion, Unop
+    from fluxions import Fluxion, Unop, Binop
 else:
-    from fluxion_node import Fluxion, Unop
+    from fluxion_node import Fluxion, Unop, Binop
 
 # Types and type aliases
 from typing import List, Callable, Union
@@ -63,12 +63,12 @@ class DifferentiableUnopFunction(Unop):
     def __repr__(self):
         return f'{self.func_name}({str(self.f)})'
 
-class DifferentiableBinopFunction(Unop):
+class DifferentiableBinopFunction(Binop):
     """A node on the calcuulation graph that is an analytically differentiable function."""
     def __init__(self, f: Fluxion, g: Fluxion, func: Callable, deriv: Callable, func_name: str):
         # Reference to the fluxion that is the input for this unary operation
-        # (only operation done in Unop.__init__)
-        # Initialize the parent Unop class
+        # (only operation done in Binop.__init__)
+        # Initialize the parent Binop class
         Binop.__init__(self,f,g)
 
         # The function and its derivative
@@ -93,7 +93,7 @@ class DifferentiableBinopFunction(Unop):
         return (val, diff)
 
     def __repr__(self):
-        return f'{self.func_name}({str(self.f)})'
+        return f'{self.func_name}({str(self.f)},{str(self.g)})'
     
 class DifferentiableFunctionFactory:
     """Factory for analytically differentiable functions"""
