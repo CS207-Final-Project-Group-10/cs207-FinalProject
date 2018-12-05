@@ -1,6 +1,9 @@
 # Throwaway python files
 fluxions/debug.py
 
+# Large data files of astronomical ephemera; only include these manually
+*.bsp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
