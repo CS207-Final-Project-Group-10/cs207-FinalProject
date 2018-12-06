@@ -661,3 +661,9 @@ class Var(Fluxion):
 
     def __repr__(self):
         return f'Var({self.var_name}, {self.X})'
+
+
+# *************************************************************************************************
+def Vars(*args):
+    """Convenience method to return a tuple of variables"""
+    return tuple(Var(x) for x in args)
