@@ -10,6 +10,7 @@ from numpy import cbrt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from datetime import date
+from tqdm import tqdm
 from jplephem.spk import SPK
 from typing import Tuple, List, Dict, Optional, Callable
 
@@ -179,7 +180,8 @@ def simulate_leapfrog(config_func: Callable, accel_func: Callable,
     
     # Perform leapfrog integration simulation
     # https://en.wikipedia.org/wiki/Leapfrog_integration
-    for i in range(N-1):
+    print(f'Performing leapfrog integration with {N} steps...')
+    for i in tqdm(range(N-1)):
         # Positions at the next time step
         q[i+1,:] = q[i,:] + v[i,:] * dt + 0.5 * a[i,:] * dt2
         # Accelerations of each body in the system at the next time step

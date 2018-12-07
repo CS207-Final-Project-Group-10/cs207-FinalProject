@@ -1,0 +1,2 @@
+ffmpeg -r 24 -f image2 -s 864x864 -i eight_planets_%05d.png -vcodec libx264 -crf 20 -pix_fmt yuv420p planets_video.mp4
+ffmpeg -i planets_video.mp4 -i holst_jupiter.mp3 -c:v copy -shortest planets.mp4

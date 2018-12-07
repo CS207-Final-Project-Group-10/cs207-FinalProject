@@ -8,3 +8,5 @@ py==1.7.0
 pytest==3.10.0
 pytest-cov==2.6.0
 six==1.11.0
+tqdm==4.28.1
+jplephem==2.8.0

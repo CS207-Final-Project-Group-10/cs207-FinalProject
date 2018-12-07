@@ -10,6 +10,7 @@ from numpy import cbrt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from datetime import date
+from tqdm import tqdm
 
 # Import from solar_system
 from solar_system import km2m, au2m, day2sec, julian_day, load_constants
@@ -129,7 +130,7 @@ def plot(q: np.ndarray, bodies: List[str], plot_colors: Dict[str, str],
     markersize_earth = 4.0
     markersize_tbl = {body : cbrt(radius_tbl[body] / radius_earth) * markersize_earth for body in bodies}
     
-    # Orbit of the Sun (it moves a little in barycentric coordinates)
+    # Plot the orbit of each body
     for k, body in enumerate(bodies):
         ax.plot(plot_x[:, k], plot_y[:, k], label=body, color=plot_colors[body], 
                 linewidth=0, markersize = markersize_tbl[body], marker='o')
@@ -145,6 +146,73 @@ def plot(q: np.ndarray, bodies: List[str], plot_colors: Dict[str, str],
 
     # Display plot
     plt.show()
+
+
+# *************************************************************************************************
+def make_frame(fig, ax, plot_x: np.ndarray, plot_y: np.ndarray, frame_num: int, 
+               bodies: List[str], plot_colors: Dict[str, str], markersize_tbl: Dict[str, float],
+               fname: str):
+    """
+    Make a series of frames of the planetary orbits that can be assembled into a movie.
+    q is a Nx3B array.  t indexes time points.  3B columns are (x, y, z) for the bodies in order.
+    """
+    # Clear the axis
+    ax.clear()
+
+    ax.set_title(f'Inner Planetary Orbits in 2018')
+    ax.set_xlabel('x in J2000.0 Frame; Astronomical Units (au)')
+    ax.set_ylabel('y in J2000.0 Frame; Astronomical Units (au)')
+
+    # Scale and tick size
+    a = 2.0
+    da = 1.0
+    ticks = np.arange(-a, a+da, da)
+
+    # Set limits and ticks
+    ax.set_xlim(-a, a)
+    ax.set_ylim(-a, a)
+    ax.set_xticks(ticks)
+    ax.set_yticks(ticks)
+
+    # Plot the orbit of each body
+    for k, body in enumerate(bodies[0:5]):
+        ax.plot(plot_x[k], plot_y[k], label=body, color=plot_colors[body], 
+                linewidth=0, markersize = markersize_tbl[body], marker='o')    
+    ax.grid()
+
+    # Save this frame
+    fig.savefig(f'{fname}_{frame_num:05d}.png')
+
+
+def make_movie(q: np.ndarray, step: int, bodies: List[str], plot_colors: Dict[str, str], fname: str):
+    """
+    Make a series of frames of the planetary orbits that can be assembled into a movie.
+    q is a Nx3B array.  t indexes time points.  3B columns are (x, y, z) for the bodies in order.
+    """
+    # Get N and number of dims
+    N, dims = q.shape
+
+    # Slices for x and y
+    x_slice = slice(0, dims, 3)
+    y_slice = slice(1, dims, 3)
+    # Convert all distances from meters to astronomical units (AU)
+    plot_x = q[:, x_slice] / au2m
+    plot_y = q[:, y_slice] / au2m
+    
+    # Set marker sizes proportional to size of bodies
+    radius_earth = radius_tbl['earth']
+    markersize_earth = 8.0
+    markersize_tbl = {body : (radius_tbl[body] / radius_earth)**0.25 * markersize_earth for body in bodies}
+    
+    # Set up chart title and scale
+    fig, ax = plt.subplots(figsize=[12,12])
+
+    # Make each frame
+    print(f'Generating movie with {N} frames...')
+    for fn in tqdm(range(N//step)):
+        # The row number in the array is the frame number times the step size
+        rn: int = fn * step
+        make_frame(fig, ax, plot_x[rn], plot_y[rn], fn, bodies, plot_colors, markersize_tbl, fname)
 
 
 # *************************************************************************************************
@@ -299,15 +367,12 @@ def accel_fl(q: np.ndarray):
 
 # *************************************************************************************************
 # main
-def main():
-    pass
 
 # Load physical constants
 G, body_name, mass_tbl, radius_tbl = load_constants()
 
 # The celestial bodies in this simulation
 bodies = ['sun', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']
-# bodies = ['sun', 'earth']
 
 # Number of bodies in this simulation
 B: int = len(bodies)
@@ -336,39 +401,46 @@ plot_colors = {
 # Build a force function
 force = make_force(q_vars, mass)
 
-# Set simulation time step to one day
-steps_per_day: int = 16
+def main():
+    # Set simulation time step to one day
+    steps_per_day: int = 16
+    
+    # Extract position and velocity of earth-sun system in 2018
+    t0 = date(2018,1,1)
+    t1 = date(2019,1,1)
+    q_jpl, v_jpl = configuration(t0, t1, steps_per_day)
+    
+    # Simulate solar earth-sun system 
+    q_sim, v_sim = simulate_leapfrog(configuration, accel, t0, t1, steps_per_day)
+    
+    # Compute energy time series for earth-sun system with JPL and leapfrog simulations
+    H_jpl, T_jpl, U_jpl = energy(q_jpl, v_jpl)
+    H_sim, T_sim, U_sim = energy(q_sim, v_sim)
+    
+    # Plot the earth-sun orbits in 2018 at weekly intervals using the simulation
+    plot_step: int = 7 * steps_per_day
+    plot(q_jpl[::plot_step], bodies, plot_colors, 'JPL', 'figs/eight_planets_jpl.png')
+    plot(q_sim[::plot_step], bodies, plot_colors, 'Leapfrog', 'figs/earth_sun_leapfrog.png')
+    
+    # Compute the MSE in AUs between the two simulations
+    mse = calc_mse(q_jpl, q_sim)
+    print(f'MSE between leapfrog simulation with {steps_per_day} steps per day and JPL:')
+    print(f'{mse:0.3e} astronomical units.')
+    
+    # Compute energy change as % of original KE
+    energy_chng_jpl = (H_jpl[-1] - H_jpl[0]) / T_jpl[0]
+    energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
+    print(f'\nEnergy change as fraction of original KE during simulation with {steps_per_day} steps per day:')
+    print(f'JPL:      {energy_chng_jpl:0.2e}.')
+    print(f'Leapfrog: {energy_chng_sim:0.2e}.')
+    
+    # Plot time series of kinetic and potential energy
+    # N: int = len(q_jpl)
+    # plot_days = np.linspace(0.0, (t1-t0).days, N)
+    # plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
+    
+    # Make movie
+    make_movie(q_jpl, steps_per_day//2, bodies, plot_colors, 'movie/planets')
 
-# Extract position and velocity of earth-sun system in 2018
-t0 = date(2018,1,1)
-t1 = date(2019,1,1)
-q_jpl, v_jpl = configuration(t0, t1, steps_per_day)
-
-# Simulate solar earth-sun system 
-q_sim, v_sim = simulate_leapfrog(configuration, accel_fl, t0, t1, steps_per_day)
-
-# Compute energy time series for earth-sun system with JPL and leapfrog simulations
-H_jpl, T_jpl, U_jpl = energy(q_jpl, v_jpl)
-H_sim, T_sim, U_sim = energy(q_sim, v_sim)
-
-# Plot the earth-sun orbits in 2018 at weekly intervals using the simulation
-plot_step: int = 7 * steps_per_day
-plot(q_jpl[::plot_step], bodies, plot_colors, 'JPL', 'figs/eight_planets_jpl.png')
-plot(q_sim[::plot_step], bodies, plot_colors, 'Leapfrog', 'figs/earth_sun_leapfrog.png')
-
-# Compute the MSE in AUs between the two simulations
-mse = calc_mse(q_jpl, q_sim)
-print(f'MSE between leapfrog simulation with {steps_per_day} steps per day and JPL:')
-print(f'{mse:0.3e} astronomical units.')
-
-# Compute energy change as % of original KE
-energy_chng_jpl = (H_jpl[-1] - H_jpl[0]) / T_jpl[0]
-energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
-print(f'\nEnergy change as fraction of original KE during simulation with {steps_per_day} steps per day:')
-print(f'JPL:      {energy_chng_jpl:0.2e}.')
-print(f'Leapfrog: {energy_chng_sim:0.2e}.')
-
-# Plot time series of kinetic and potential energy
-N: int = len(q_jpl)
-plot_days = np.linspace(0.0, (t1-t0).days, N)
-# plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
+if __name__ == '__main__':
+    main()

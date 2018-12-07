@@ -245,10 +245,6 @@ def accel_ES_fl(q: np.ndarray):
 
 
 # *************************************************************************************************
-# main
-def main():
-    pass
-
 # Load physical constants
 G, body_name, mass_tbl, radius_tbl = load_constants()
 
@@ -266,40 +262,45 @@ slices = [slice(b*3, (b+1)*3) for b in range(B)]
 # Build a force function
 force_ES = make_force_ES(q_vars, mass)
 
-# Set simulation time step to one day
-steps_per_day: int = 16
 
-# Extract position and velocity of earth-sun system in 2018
-t0 = date(2018,1,1)
-t1 = date(2019,1,1)
-q_jpl, v_jpl = configuration_ES(t0, t1, steps_per_day)
+def main():
+    # Set simulation time step to one day
+    steps_per_day: int = 16
+    
+    # Extract position and velocity of earth-sun system in 2018
+    t0 = date(2018,1,1)
+    t1 = date(2019,1,1)
+    q_jpl, v_jpl = configuration_ES(t0, t1, steps_per_day)
+    
+    # Simulate solar earth-sun system 
+    q_sim, v_sim = simulate_leapfrog(configuration_ES, accel_ES_fl, t0, t1, steps_per_day)
+    
+    # Compute energy time series for earth-sun system with JPL and leapfrog simulations
+    H_jpl, T_jpl, U_jpl = energy_ES(q_jpl, v_jpl)
+    H_sim, T_sim, U_sim = energy_ES(q_sim, v_sim)
+    
+    # Plot the earth-sun orbits in 2018 at weekly intervals using the simulation
+    plot_step: int = 7 * steps_per_day
+    plot_ES(q_jpl[::plot_step], 'JPL', 'figs/earth_sun_jpl.png')
+    plot_ES(q_sim[::plot_step], 'Leapfrog', 'figs/earth_sun_leapfrog.png')
+    
+    # Compute the MSE in AUs between the two simulations
+    mse = calc_mse(q_jpl, q_sim)
+    print(f'MSE between leapfrog simulation with {steps_per_day} steps per day and JPL:')
+    print(f'{mse:0.3e} astronomical units.')
+    
+    # Compute energy change as % of original KE
+    energy_chng_jpl = (H_jpl[-1] - H_jpl[0]) / T_jpl[0]
+    energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
+    print(f'\nEnergy change as fraction of original KE during simulation with {steps_per_day} steps per day:')
+    print(f'JPL:      {energy_chng_jpl:0.2e}.')
+    print(f'Leapfrog: {energy_chng_sim:0.2e}.')
+    
+    # Plot time series of kinetic and potential energy
+    N: int = len(q_jpl)
+    plot_days = np.linspace(0.0, (t1-t0).days, N)
+    plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
 
-# Simulate solar earth-sun system 
-q_sim, v_sim = simulate_leapfrog(configuration_ES, accel_ES_fl, t0, t1, steps_per_day)
 
-# Compute energy time series for earth-sun system with JPL and leapfrog simulations
-H_jpl, T_jpl, U_jpl = energy_ES(q_jpl, v_jpl)
-H_sim, T_sim, U_sim = energy_ES(q_sim, v_sim)
-
-# Plot the earth-sun orbits in 2018 at weekly intervals using the simulation
-plot_step: int = 7 * steps_per_day
-plot_ES(q_jpl[::plot_step], 'JPL', 'figs/earth_sun_jpl.png')
-plot_ES(q_sim[::plot_step], 'Leapfrog', 'figs/earth_sun_leapfrog.png')
-
-# Compute the MSE in AUs between the two simulations
-mse = calc_mse(q_jpl, q_sim)
-print(f'MSE between leapfrog simulation with {steps_per_day} steps per day and JPL:')
-print(f'{mse:0.3e} astronomical units.')
-
-# Compute energy change as % of original KE
-energy_chng_jpl = (H_jpl[-1] - H_jpl[0]) / T_jpl[0]
-energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
-print(f'\nEnergy change as fraction of original KE during simulation with {steps_per_day} steps per day:')
-print(f'JPL:      {energy_chng_jpl:0.2e}.')
-print(f'Leapfrog: {energy_chng_sim:0.2e}.')
-
-# Plot time series of kinetic and potential energy
-N: int = len(q_jpl)
-plot_days = np.linspace(0.0, (t1-t0).days, N)
-plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
-
+if __name__ == '__main__':
+    main()
