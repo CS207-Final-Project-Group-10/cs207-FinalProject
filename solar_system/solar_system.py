@@ -138,7 +138,7 @@ def calc_mse(q1, q2):
 
 # *************************************************************************************************
 def simulate_leapfrog(config_func: Callable, accel_func: Callable, 
-                      t0: date, t1: date, steps_per_day: int, num_bodies: int = 2):
+                      t0: date, t1: date, steps_per_day: int):
     """
     Simulate the earth-sun system from t0 to t1 using Leapfrog Integration.
     INPUTS:
@@ -152,8 +152,12 @@ def simulate_leapfrog(config_func: Callable, accel_func: Callable,
     
     # Length of the simulation (number of steps)
     N: int = (t1 - t0).days * steps_per_day
-    # Number of dimensions in arrays; 3 spatial dimensions times the number of celestial bodies
-    dims = 3 * num_bodies
+
+    # Get the initial conditions
+    q0, v0 = config_func(t0)
+
+    # Infer the number of dimensions from the shape of q0
+    dims: int = q0.shape[1]
     
     # The time step in seconds
     dt = float(day2sec) / float(steps_per_day)
@@ -165,7 +169,6 @@ def simulate_leapfrog(config_func: Callable, accel_func: Callable,
     v: np.ndarray = np.zeros((N, dims))
     
     # Initialize the first row with the initial conditions from the JPL ephemerides
-    q0, v0 = config_func(t0)
     q[0, :] = q0
     v[0, :] = v0
     
@@ -255,7 +258,7 @@ def plot_energy(time, H, T, U):
     fig, ax = plt.subplots(figsize=[16,8])
     ax.set_title('System Energy vs. Time')
     ax.set_xlabel('Time in Days')
-    ax.set_ylabel('Energy (% Initial KE)')
+    ax.set_ylabel('Energy (Ratio Initial KE)')
     ax.plot(time, T, label='T', color='r')
     ax.plot(time, U, label='U', color='b')
     ax.plot(time, H, label='H', color='k')

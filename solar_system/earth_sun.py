@@ -171,7 +171,7 @@ def accel_ES(q: np.ndarray):
 # *************************************************************************************************
 def energy_ES(q, v):
     """Compute the kinetic and potential energy of the earth sun system"""
-    # Body 0 is the sun, Body 1 is the Sun
+    # Body 0 is the sun, Body 1 is the earth
     m0 = mass[0]
     m1 = mass[1]
 
@@ -191,7 +191,7 @@ def energy_ES(q, v):
     # Potential energy is -G m1 m2  / r
     dv_01 = q1 - q0
     r_01 = np.linalg.norm(dv_01, axis=1)
-    U_01: np.ndarray = -G * m0 * m1 * 1.0 / r_01
+    U_01: np.ndarray = -G * m0 * m1 / r_01
     U: np.ndarray = U_01
     
     # Total energy H = T + U
@@ -204,9 +204,6 @@ def energy_ES(q, v):
 # q variables for the earth-sun system
 x0, y0, z0 = fl.Vars('x0', 'y0', 'z0')
 x1, y1, z1 = fl.Vars('x1', 'y1', 'z1')
-# v variables for the earth-sun system
-v0, v0, v0 = fl.Vars('v0', 'v0', 'v0')
-v1, v1, v1 = fl.Vars('v1', 'v1', 'v1')
 
 # Arrange qs into a list
 q_vars = [x0, y0, z0,
@@ -291,18 +288,18 @@ plot_ES(q_sim[::plot_step], 'Leapfrog', 'figs/earth_sun_leapfrog.png')
 
 # Compute the MSE in AUs between the two simulations
 mse = calc_mse(q_jpl, q_sim)
-print(f'MSE between lapfrog simulation with {steps_per_day} steps per day and JPL:')
+print(f'MSE between leapfrog simulation with {steps_per_day} steps per day and JPL:')
 print(f'{mse:0.3e} astronomical units.')
 
 # Compute energy change as % of original KE
 energy_chng_jpl = (H_jpl[-1] - H_jpl[0]) / T_jpl[0]
 energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
 print(f'\nEnergy change as fraction of original KE during simulation with {steps_per_day} steps per day:')
-print(f'JPL:      {energy_chng_jpl*100:0.2e}.')
-print(f'Leapfrog: {energy_chng_sim*100:0.2e}.')
+print(f'JPL:      {energy_chng_jpl:0.2e}.')
+print(f'Leapfrog: {energy_chng_sim:0.2e}.')
 
 # Plot time series of kinetic and potential energy
 N: int = len(q_jpl)
 plot_days = np.linspace(0.0, (t1-t0).days, N)
-# plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
+plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
 

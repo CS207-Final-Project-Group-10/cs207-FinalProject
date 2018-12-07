@@ -35,10 +35,10 @@ mpl.rcParams.update({'font.size': 20})
 
 
 # *************************************************************************************************
-def configuration(bodies: List[str], t0: date, t1: Optional[date] = None,  
+def configuration(t0: date, t1: Optional[date] = None,  
                   steps_per_day: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Get the positions and velocities of the sun and nine planets
+    Get the positions and velocities of the sun and eight planets
     Returned as a tuple q, v
     q: Nx3 array of positions (x, y, z) in the J2000.0 coordinate frame.
     """
@@ -63,6 +63,8 @@ def configuration(bodies: List[str], t0: date, t1: Optional[date] = None,
 
     # Number of time steps
     N: int = len(jd)
+    
+    # bodies is a list of the celestial bodies considered; should be in an enclosing scope
     # Number of bodies
     B: int = len(bodies)
     # Number of dimensions
@@ -94,7 +96,7 @@ def configuration(bodies: List[str], t0: date, t1: Optional[date] = None,
 def plot(q: np.ndarray, bodies: List[str], plot_colors: Dict[str, str],
          sim_name: str, fname: Optional[str] = None):
     """
-    Plot the planetary orbits.
+    Plot the planetary orbits.  Plot size limited to box of 10 AU around the sun.
     q is a Nx3B array.  t indexes time points.  3B columns are (x, y, z) for the bodies in order.
     """
     # Get N and number of dims
@@ -109,7 +111,7 @@ def plot(q: np.ndarray, bodies: List[str], plot_colors: Dict[str, str],
     
     # Set up chart title and scale
     fig, ax = plt.subplots(figsize=[12,12])
-    ax.set_title(f'Orbit of Earth in 2018; Weekly from {sim_name}')
+    ax.set_title(f'Inner Planetary Orbits in 2018; Weekly from {sim_name}')
     ax.set_xlabel('x in J2000.0 Frame; Astronomical Units (au)')
     ax.set_ylabel('y in J2000.0 Frame; Astronomical Units (au)')
     # Scale and tick size
@@ -151,6 +153,9 @@ def accel(q: np.ndarray):
     Compute the gravitational accelerations in the system
     q in row vector of 6 elements: sun (x, y, z), earth (x, y, z)
     """
+
+    # Infer number of dimensions from q
+    dims: int = len(q)
 
     # Initialize acceleration as dimsx1 array
     a: np.ndarray = np.zeros(dims)
@@ -202,29 +207,94 @@ def energy(q, v):
     for i in range(B):
         # Kinetic energy is 1/2 mv^2
         m = mass[i]
-        v = v[:, slices[i]]
-        T += 0.5 * m * np.sum(v * v, axis=1)
+        vi = v[:, slices[i]]
+        T += 0.5 * m * np.sum(vi * vi, axis=1)
     
     # Add up potential energy of each pair of bodies
     for i in range(B):
         for j in range(i+1, B):
             # Masses of these two bodies
-            m0 = mass[i]
-            m1 = mass[1]
+            mi = mass[i]
+            mj = mass[j]
         
             # Positions of body i and j
-            q0: np.ndarray = q[:, slices[0]]
-            q1: np.ndarray = q[:, slices[1]]
+            qi: np.ndarray = q[:, slices[i]]
+            qj: np.ndarray = q[:, slices[j]]
         
             # Potential energy is -G m1 m2  / r
-            dv_01 = q1 - q0
-            r_01 = np.linalg.norm(dv_01, axis=1)
-            U -= G * m0 * m1 * 1.0 / r_01
+            dv_ij = qj - qi
+            r_ij = np.linalg.norm(dv_ij, axis=1)
+            U -= G * mi * mj * 1.0 / r_ij
     
     # Total energy H = T + U
     H = T + U
     
     return H, T, U
+
+
+# *************************************************************************************************
+# q variables for the eight planets system
+x0, y0, z0 = fl.Vars('x0', 'y0', 'z0')
+x1, y1, z1 = fl.Vars('x1', 'y1', 'z1')
+x2, y2, z2 = fl.Vars('x2', 'y2', 'z2')
+x3, y3, z3 = fl.Vars('x3', 'y3', 'z3')
+x4, y4, z4 = fl.Vars('x4', 'y4', 'z4')
+x5, y5, z5 = fl.Vars('x5', 'y5', 'z5')
+x6, y6, z6 = fl.Vars('x6', 'y6', 'z6')
+x7, y7, z7 = fl.Vars('x7', 'y7', 'z7')
+x8, y8, z8 = fl.Vars('x8', 'y8', 'z8')
+
+# Arrange qs into a list
+q_vars = [x0, y0, z0,
+          x1, y1, z1,
+          x2, y2, z2,
+          x3, y3, z3,
+          x4, y4, z4,
+          x5, y5, z5,
+          x6, y6, z6,
+          x7, y7, z7,
+          x8, y8, z8]
+
+
+def make_force(q_vars, mass):
+    """Fluxion with the potential energy of the eight planets sytem"""
+    # Number of bodies
+    B: int = len(mass)
+    
+    # Build the potential energy fluxion by iterating over distinct pairs of bodies
+    U = fl.Const(0.0)
+    for i in range(B):
+        for j in range(i+1, B):
+            U +=  U_ij(q_vars, mass, i, j)
+    
+    # Varname arrays for both the coordinate system and U
+    vn_q = np.array([q.var_name for q in q_vars])
+    vn_fl = np.array(sorted(U.var_names))
+    # Permutation array for putting variables in q in the order expected by U (alphabetical)
+    q2fl = np.array([np.argmax((vn_q == v)) for v in vn_fl])
+    # Permutation array for putting results of U.diff() in order of q_vars
+    fl2q = np.array([np.argmax((vn_fl == v)) for v in vn_q])
+    # Return a force function from this potential
+    force_func = lambda q: -U.diff(q[q2fl]).squeeze()[fl2q]
+    return force_func
+
+
+def accel_fl(q: np.ndarray):
+    """Accelaration in the earth-sun system using Fluxion potential energy"""
+    # Infer number of dimensions from q
+    dims: int = len(q)
+    # Number of celestial bodies
+    B: int = dims // 3
+
+    # The force given the positions q of the bodies
+    f = force(q)
+
+    # The accelerations from this force
+    a = np.zeros(dims)
+    for i in range(B):
+        a[slices[i]] = f[slices[i]] / mass[i]
+    
+    return a
 
 
 # *************************************************************************************************
@@ -264,7 +334,7 @@ plot_colors = {
         }
 
 # Build a force function
-# force_ES = make_force_ES(q_vars, mass)
+force = make_force(q_vars, mass)
 
 # Set simulation time step to one day
 steps_per_day: int = 16
@@ -272,33 +342,33 @@ steps_per_day: int = 16
 # Extract position and velocity of earth-sun system in 2018
 t0 = date(2018,1,1)
 t1 = date(2019,1,1)
-q_jpl, v_jpl = configuration(bodies, t0, t1, steps_per_day)
+q_jpl, v_jpl = configuration(t0, t1, steps_per_day)
 
 # Simulate solar earth-sun system 
-# q_sim, v_sim = simulate_leapfrog(configuration_ES, accel_ES_fl, t0, t1, steps_per_day)
+q_sim, v_sim = simulate_leapfrog(configuration, accel_fl, t0, t1, steps_per_day)
 
 # Compute energy time series for earth-sun system with JPL and leapfrog simulations
 H_jpl, T_jpl, U_jpl = energy(q_jpl, v_jpl)
-# H_sim, T_sim, U_sim = energy_ES(q_sim, v_sim)
+H_sim, T_sim, U_sim = energy(q_sim, v_sim)
 
 # Plot the earth-sun orbits in 2018 at weekly intervals using the simulation
 plot_step: int = 7 * steps_per_day
 plot(q_jpl[::plot_step], bodies, plot_colors, 'JPL', 'figs/eight_planets_jpl.png')
-# plot_ES(q_sim[::plot_step], 'Leapfrog', 'figs/earth_sun_leapfrog.png')
+plot(q_sim[::plot_step], bodies, plot_colors, 'Leapfrog', 'figs/earth_sun_leapfrog.png')
 
 # Compute the MSE in AUs between the two simulations
-# mse = calc_mse(q_jpl, q_sim)
-# print(f'MSE between lapfrog simulation with {steps_per_day} steps per day and JPL:')
-# print(f'{mse:0.3e} astronomical units.')
+mse = calc_mse(q_jpl, q_sim)
+print(f'MSE between leapfrog simulation with {steps_per_day} steps per day and JPL:')
+print(f'{mse:0.3e} astronomical units.')
 
 # Compute energy change as % of original KE
 energy_chng_jpl = (H_jpl[-1] - H_jpl[0]) / T_jpl[0]
-# energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
+energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
 print(f'\nEnergy change as fraction of original KE during simulation with {steps_per_day} steps per day:')
-print(f'JPL:      {energy_chng_jpl*100:0.2e}.')
-# print(f'Leapfrog: {energy_chng_sim*100:0.2e}.')
+print(f'JPL:      {energy_chng_jpl:0.2e}.')
+print(f'Leapfrog: {energy_chng_sim:0.2e}.')
 
 # Plot time series of kinetic and potential energy
 N: int = len(q_jpl)
 plot_days = np.linspace(0.0, (t1-t0).days, N)
-plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
+# plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
