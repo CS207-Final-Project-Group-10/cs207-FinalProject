@@ -98,7 +98,7 @@ def load_constants():
          'jupiter': mass_earth * 317.8,
          'saturn': mass_earth * 95.2,
          'uranus': mass_earth * 14.5,
-         'neptune': mass_earth * 17.1
+         'neptune': mass_earth * 17.1,
          }
     
     # The radii of the celestial bodiea

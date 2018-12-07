@@ -40,7 +40,7 @@ def configuration_ES(t0: date, t1: Optional[date] = None,
     """
     Get the positions and velocities of the earth and sun from date t0 to t1.
     Returned as a tuple q, v
-    q: Nx3 array of positions (x, y, z) in the 
+    q: Nx3 array of positions (x, y, z) in the J2000.0 coordinate frame.
     """
     # Default steps_per_day = 1
     if steps_per_day is None:
@@ -255,10 +255,10 @@ def main():
 # Load physical constants
 G, body_name, mass_tbl, radius_tbl = load_constants()
 
-# Number of bodies in this simulation
-B: int = 2
 # Names of the bodies in this simulation
 bodies = ['sun', 'earth']
+# Number of bodies in this simulation
+B: int = len(bodies)
 
 # Masses of sun and earth
 mass = np.array([mass_tbl[body] for body in bodies])
@@ -278,7 +278,6 @@ t1 = date(2019,1,1)
 q_jpl, v_jpl = configuration_ES(t0, t1, steps_per_day)
 
 # Simulate solar earth-sun system 
-# q_sim, v_sim = simulate_leapfrog_ES(t0, t1, dt)
 q_sim, v_sim = simulate_leapfrog(configuration_ES, accel_ES_fl, t0, t1, steps_per_day)
 
 # Compute energy time series for earth-sun system with JPL and leapfrog simulations
