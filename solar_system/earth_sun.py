@@ -12,11 +12,11 @@ import matplotlib.pyplot as plt
 from datetime import date
 
 # Import from solar_system
-from solar_system import km2m, au2m, day2sec, julian_day
-from solar_system import jpl_kernel, jpl_body_id, load_constants, U_ij, calc_mse, plot_energy
+from solar_system import km2m, au2m, day2sec, julian_day, load_constants
+from solar_system import jpl_kernel, jpl_body_id, simulate_leapfrog, calc_mse, plot_energy, U_ij
 
 # Types
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Optional
 
 # *************************************************************************************************
 # Handle import of module fluxions differently if module
@@ -35,15 +35,19 @@ mpl.rcParams.update({'font.size': 20})
 
 
 # *************************************************************************************************
-def configuration_ES(t0: date, t1: Optional[date] = None, dt: float = 1.0) -> Tuple[np.ndarray, np.ndarray]:
+def configuration_ES(t0: date, t1: Optional[date] = None, 
+                     steps_per_day: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Get the positions and velocities of the earth and sun from date t0 to t1.
     Returned as a tuple q, v
     q: Nx3 array of positions (x, y, z) in the 
     """
-    # Default dt = 1.0
-    if dt is None:
-        dt = 1.0
+    # Default steps_per_day = 1
+    if steps_per_day is None:
+        steps_per_day = 1
+        
+    # Time step dt is 1.0 over steps per day
+    dt: float = 1.0 / float(steps_per_day)
 
     # Default t1 to one day after t0
     if t1 is not None:
@@ -133,9 +137,8 @@ def accel_ES(q: np.ndarray):
     # Number of dimensions in arrays; 3 spatial dimensions times the number of bodies
     dims = 3 * num_bodies
 
-    # Body 0 is the sun
+    # Body 0 is the sun; Body 1 is the earth
     m0 = mass[0]
-    # Body 1 is the earth
     m1 = mass[1]
 
     # Extract position of the sun and earth as 3-vectors
@@ -163,51 +166,6 @@ def accel_ES(q: np.ndarray):
 
     # Return the acceleration vector
     return a
-
-
-def simulate_leapfrog_ES(t0: date, t1: date, dt: float):
-    """
-    Simulate the earth-sun system from t0 to t1 using Leapfrog Integration.
-    dt is a time step in days.
-    """
-    
-    # Length of the simulation in days
-    N: int = round((t1 - t0).days / dt)
-    # Number of celestial bodies
-    num_bodies: int = 2
-    # Number of dimensions in arrays; 3 spatial dimensions times the number of bodies
-    dims = 3 * num_bodies
-    
-    # Convert dt from days to seconds (want all calculations in MKS)
-    dt *= day2sec
-    # Square of the time step
-    dt2: float = dt * dt
-    # Number of time steps in the sumulation
-    
-    # Initialize arrays to store computed positions and velocities
-    q: np.ndarray = np.zeros((N, dims))
-    v: np.ndarray = np.zeros((N, dims))
-    
-    # Initialize the first row with the initial conditions from the JPL ephemerides
-    q0, v0 = configuration_ES(t0)
-    q[0, :] = q0
-    v[0, :] = v0
-    
-    # Initialize an array to store the acceleration at each time step
-    a: np.ndarray = np.zeros((N, dims))
-    # First row of accelerations
-    a[0, :] = accel_ES(q[0])
-    
-    # Perform leapfrog integration simulation
-    # https://en.wikipedia.org/wiki/Leapfrog_integration
-    for i in range(N-1):
-        # Positions at the next time step
-        q[i+1,:] = q[i,:] + v[i,:] * dt + 0.5 * a[i,:] * dt2
-        # Accelerations of each body in the system at the next time step
-        a[i+1,:] = accel_ES(q[i+1])        
-        # Velocities of each body at the next time step
-        v[i+1,:] = v[i,:] + 0.5 * (a[i,:] + a[i+1,:]) * dt
-    return q, v
 
 
 # *************************************************************************************************
@@ -246,7 +204,7 @@ def energy_ES(q, v):
 # q variables for the earth-sun system
 x0, y0, z0 = fl.Vars('x0', 'y0', 'z0')
 x1, y1, z1 = fl.Vars('x1', 'y1', 'z1')
-# v variables for the earth-syn system
+# v variables for the earth-sun system
 v0, v0, v0 = fl.Vars('v0', 'v0', 'v0')
 v1, v1, v1 = fl.Vars('v1', 'v1', 'v1')
 
@@ -255,15 +213,38 @@ q_vars = [x0, y0, z0,
           x1, y1, z1]
 
 
-def make_U_ES(q_vars, mass):
+def make_force_ES(q_vars, mass):
     """Fluxion with the potential energy of the earth-sun sytem"""
-    return U_ij(q_vars, mass, 0, 1)
+    # Build the potential energy fluxion; just one pair of bodies
+    U =  U_ij(q_vars, mass, 0, 1)
+    # Varname arrays for both the coordinate system and U
+    vn_q = np.array([q.var_name for q in q_vars])
+    vn_fl = np.array(sorted(U.var_names))
+    # Permutation array for putting variables in q in the order expected by U (alphabetical)
+    q2fl = np.array([np.argmax((vn_q == v)) for v in vn_fl])
+    # Permutation array for putting results of U.diff() in order of q_vars
+    fl2q = np.array([np.argmax((vn_fl == v)) for v in vn_q])
+    # Return a force function from this potential
+    force_func = lambda q: -U.diff(q[q2fl]).squeeze()[fl2q]
+    return force_func
 
 
-def accel_ES_fl(q: np.ndarray, U: fl.Fluxion):
+def accel_ES_fl(q: np.ndarray):
     """Accelaration in the earth-sun system using Fluxion potential energy"""
-    # Get the array of forces: negative gradient of potential
-    f = -U.diff(q)
+    # Number of celestial bodies
+    num_bodies: int = 2
+    # Number of dimensions in arrays; 3 spatial dimensions times the number of bodies
+    dims = 3 * num_bodies
+
+    # The force given the positions q of the bodies
+    f = force_ES(q)
+
+    # The accelerations from this force
+    a = np.zeros(dims)
+    a[slices[0]] = f[slices[0]] / mass[0]
+    a[slices[1]] = f[slices[1]] / mass[1]
+    
+    return a
 
 
 # *************************************************************************************************
@@ -281,55 +262,48 @@ bodies = ['sun', 'earth']
 
 # Masses of sun and earth
 mass = np.array([mass_tbl[body] for body in bodies])
-# mass_sun = mass_tbl['sun']
-# mass_earth = mass_tbl['earth']
 
 # Slices for the B celestial bodies
 slices = [slice(b*3, (b+1)*3) for b in range(B)]
 
+# Build a force function
+force_ES = make_force_ES(q_vars, mass)
+
 # Set simulation time step to one day
-dt: float = 2.0**(-4)
+steps_per_day: int = 16
 
 # Extract position and velocity of earth-sun system in 2018
 t0 = date(2018,1,1)
 t1 = date(2019,1,1)
-q_jpl, v_jpl = configuration_ES(t0, t1, dt)
+q_jpl, v_jpl = configuration_ES(t0, t1, steps_per_day)
 
 # Simulate solar earth-sun system 
-q_sim, v_sim = simulate_leapfrog_ES(t0, t1, dt)
+# q_sim, v_sim = simulate_leapfrog_ES(t0, t1, dt)
+q_sim, v_sim = simulate_leapfrog(configuration_ES, accel_ES_fl, t0, t1, steps_per_day)
 
 # Compute energy time series for earth-sun system with JPL and leapfrog simulations
 H_jpl, T_jpl, U_jpl = energy_ES(q_jpl, v_jpl)
 H_sim, T_sim, U_sim = energy_ES(q_sim, v_sim)
 
 # Plot the earth-sun orbits in 2018 at weekly intervals using the simulation
-step = round(7.0 / dt)
-# plot_ES(q_jpl[::step], 'JPL', 'figs/earth_sun_jpl.png')
-# plot_ES(q_sim[::step], 'Leapfrog', 'figs/earth_sun_leapfrog.png')
+plot_step: int = 7 * steps_per_day
+plot_ES(q_jpl[::plot_step], 'JPL', 'figs/earth_sun_jpl.png')
+plot_ES(q_sim[::plot_step], 'Leapfrog', 'figs/earth_sun_leapfrog.png')
 
 # Compute the MSE in AUs between the two simulations
 mse = calc_mse(q_jpl, q_sim)
-print(f'MSE between lapfrog simulation with dt={dt:0.2f} days and JPL: {mse:0.3e} astronomical units.')
+print(f'MSE between lapfrog simulation with {steps_per_day} steps per day and JPL:')
+print(f'{mse:0.3e} astronomical units.')
 
 # Compute energy change as % of original KE
 energy_chng_jpl = (H_jpl[-1] - H_jpl[0]) / T_jpl[0]
 energy_chng_sim = (H_sim[-1] - H_sim[0]) / T_sim[0]
-print(f'\nEnergy change as fraction of original KE during simulation with dt={dt:0.2f}:')
+print(f'\nEnergy change as fraction of original KE during simulation with {steps_per_day} steps per day:')
 print(f'JPL:      {energy_chng_jpl*100:0.2e}.')
 print(f'Leapfrog: {energy_chng_sim*100:0.2e}.')
 
 # Plot time series of kinetic and potential energy
-time = np.arange(0.0, (t1-t0).days, dt)
-# plot_energy(time, H_jpl, T_jpl, U_jpl)
+N: int = len(q_jpl)
+plot_days = np.linspace(0.0, (t1-t0).days, N)
+# plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
 
-
-# *************************************************************************************************
-# Distance between earth and sun
-# r2_01 = flux_r2_ij(0, 1)
-# r_01 = flux_r_ij(0, 1)
-# arg_tbl = {'x0':0,'y0':0, 'z0':0,'x1':1, 'y1':1, 'z1':1}
-# arg_ary = np.array([0.0,0.0,0.0,1.0,1.0,1.0])
-# f = fl.sqrt(fl.square(x1-x0) + fl.square(y1-y0) + fl.square(z1-z0))
-
-
-U_ES = make_U_ES(q_vars, mass)

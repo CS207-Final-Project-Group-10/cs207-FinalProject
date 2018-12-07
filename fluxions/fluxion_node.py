@@ -665,5 +665,5 @@ class Var(Fluxion):
 
 # *************************************************************************************************
 def Vars(*args):
-    """Convenience method to return a tuple of variables"""
+    """Convenience function to return a tuple of unboound variables"""
     return tuple(Var(x) for x in args)

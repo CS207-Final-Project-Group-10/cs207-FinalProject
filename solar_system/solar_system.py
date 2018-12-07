@@ -11,7 +11,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from datetime import date
 from jplephem.spk import SPK
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict, Optional, Callable
 
 # *************************************************************************************************
 # Handle import of module fluxions differently if module
@@ -133,7 +133,57 @@ def calc_mse(q1, q2):
     # Difference in positions between two simulations
     dq = q2 - q1
     # Mean squared error in AUs
-    return np.linalg.norm(dq) / au2m
+    return np.sqrt(np.mean(dq*dq))/au2m
+
+
+# *************************************************************************************************
+def simulate_leapfrog(config_func: Callable, accel_func: Callable, 
+                      t0: date, t1: date, steps_per_day: int, num_bodies: int = 2):
+    """
+    Simulate the earth-sun system from t0 to t1 using Leapfrog Integration.
+    INPUTS:
+    config_func: function taking a date or date range and returning position and velocity of bodies
+    accel_func:  function taking positions of the bodies and returning their accelerations
+    t0: start date of the simulation; a python date
+    t1: end date of the simulation (exclusive); a python date
+    dt: time step in days.
+    num_bodies: the number of celestial bodies in the simulation
+    """
+    
+    # Length of the simulation (number of steps)
+    N: int = (t1 - t0).days * steps_per_day
+    # Number of dimensions in arrays; 3 spatial dimensions times the number of celestial bodies
+    dims = 3 * num_bodies
+    
+    # The time step in seconds
+    dt = float(day2sec) / float(steps_per_day)
+    # Square of the time step
+    dt2: float = dt * dt
+    
+    # Initialize arrays to store computed positions and velocities
+    q: np.ndarray = np.zeros((N, dims))
+    v: np.ndarray = np.zeros((N, dims))
+    
+    # Initialize the first row with the initial conditions from the JPL ephemerides
+    q0, v0 = config_func(t0)
+    q[0, :] = q0
+    v[0, :] = v0
+    
+    # Initialize an array to store the acceleration at each time step
+    a: np.ndarray = np.zeros((N, dims))
+    # First row of accelerations
+    a[0, :] = accel_func(q[0])
+    
+    # Perform leapfrog integration simulation
+    # https://en.wikipedia.org/wiki/Leapfrog_integration
+    for i in range(N-1):
+        # Positions at the next time step
+        q[i+1,:] = q[i,:] + v[i,:] * dt + 0.5 * a[i,:] * dt2
+        # Accelerations of each body in the system at the next time step
+        a[i+1,:] = accel_func(q[i+1])        
+        # Velocities of each body at the next time step
+        v[i+1,:] = v[i,:] + 0.5 * (a[i,:] + a[i+1,:]) * dt
+    return q, v
 
 
 # *************************************************************************************************
@@ -160,10 +210,10 @@ def flux_v2(v_vars: List[fl.Var], i: int):
     # The speed squared of body i
     return fl.square(v_vars[k+0]) + fl.square(v_vars[k+1]) + fl.square(v_vars[k+2])
 
-
 # The universal gravitational constant
 # https://en.wikipedia.org/wiki/Gravitational_constant
 G: float = 6.67408E-11
+
 
 def U_ij(q_vars: List[fl.Var], mass: np.ndarray, i: int, j: int):
     """Make Fluxion with the gratiational potential energy beween body i and j"""
@@ -176,8 +226,6 @@ def U_ij(q_vars: List[fl.Var], mass: np.ndarray, i: int, j: int):
     
     # Gravitational potential is -G * m1 * m2 / r
     U = -(G * mi * mj) / flux_r(q_vars, i, j)
-    # Need to set the var_names to match q_vars
-    U.var_names = [q.var_name for q in q_vars]
     return U
 
 
@@ -191,8 +239,6 @@ def T_i(v_vars: List[fl.Var], mass: np.ndarray, i: int):
     
     # kineteic energy = 1/2 * mass * speed^2
     T = (0.5 * m) * flux_v2(v_vars, i)
-    # Need to set the var_names to match v_vars
-    T.var_names = [v.var_name for v in v_vars]
     return T
 
 
