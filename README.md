@@ -1,8 +1,4 @@
-[![Build Status](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master)](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master)
-
-[![Coverage Status](https://coveralls.io/repos/github/CS207-Final-Project-Group-10/cs207-FinalProject/badge.svg)](https://coveralls.io/github/CS207-Final-Project-Group-10/cs207-FinalProject?branch=master)
-
-# CS207 Final Project Group 10
+# CS207 Final Project Group 10 [![Build Status](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master)](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/CS207-Final-Project-Group-10/cs207-FinalProject/badge.svg)](https://coveralls.io/github/CS207-Final-Project-Group-10/cs207-FinalProject?branch=master)
 
 
 ## Group Members:
@@ -14,9 +10,15 @@
 
 ----
 
-### Installation Instructions 
+## Documentation
+
+1. [Fluxions](/fluxions/README.md) - forward mode auto differentiation tools
+2. [Optimization documentation](/fuxions/somefile) - optimization and root finding tools
+3. [Solar System Modelling](/solar_system/README.md) - an example project utilizing fluxions
+   
+## Installation Instructions 
 - #### For end users:
-Our package is available on Test PyPI. Before installing ensure you have a Python3 environment with numpy installed available.
+Our package is available on PyPI. Before installing ensure you have a Python3 environment with numpy installed available.
 
 If you are using a Mac you can setup an appropriate virtual environment in your desired directory as follows:
 
@@ -31,7 +33,7 @@ pip3 install numpy
 Once you have an appropriate environment set up, you can install the fluxions package with the following command:
 
 ```console
-pip3 install --index-url https://test.pypi.org/simple/ fluxions
+pip3 install fluxions
 ```
 - #### For developers:
 
