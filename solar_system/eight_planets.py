@@ -4,6 +4,7 @@ Thu Dec  6 21:26:00 2018
 """
 
 import os
+from subprocess import call
 from importlib import util
 import numpy as np
 from numpy import cbrt
@@ -215,6 +216,19 @@ def make_movie(q: np.ndarray, step: int, bodies: List[str], plot_colors: Dict[st
         rn: int = fn * step
         make_frame(fig, ax, plot_x[rn], plot_y[rn], fn, bodies, plot_colors, markersize_tbl, fname)
 
+    # Assemble the frames into a movie (video only)
+    cmd1: List[str] = ['ffmpeg', '-r', '24', '-f', 'image2', '-s', '864x864', '-i', 'movie/planets_%05d.png',
+                     '-vcodec',  'libx264', '-crf', '20', '-pix_fmt', 'yuv420p', 'movie/planets_video.mp4']
+    call(cmd1)
+
+    # Add the soundtrack to the movie
+    cmd2: List[str] = ['ffmpeg', '-i', 'movie/planets_video.mp4', '-i', 'movie/holst_jupiter.mp3', 
+                      '-c:v', 'copy', '-shortest', 'movie/planets.mp4']
+    call(cmd2) 
+
+    # Delete the frames
+    cmd3: List[str] = ['rm', 'movie/*.png']
+    call(cmd3)
 
 # *************************************************************************************************
 def accel(q: np.ndarray):
@@ -440,8 +454,14 @@ def main():
     # plot_days = np.linspace(0.0, (t1-t0).days, N)
     # plot_energy(plot_days, H_jpl, T_jpl, U_jpl)
     
-    # Make movie
-    make_movie(q_jpl, steps_per_day//2, bodies, plot_colors, 'movie/planets')
+    # Make movie frames if necessary    
+    if not os.path.isfile('movie/planets_video.mp4'):
+        make_movie(q_jpl, steps_per_day//2, bodies, plot_colors, 'movie/planets')
+    else:
+        print(f'Found movie/planets_video.mp4, not regenerating it.')
+        
+    # Move post-processing 
 
 if __name__ == '__main__':
     main()
+
