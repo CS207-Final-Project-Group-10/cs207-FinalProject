@@ -18,7 +18,7 @@
    
 ## Installation Instructions 
 - #### For end users:
-Our package is available on Test PyPI. Before installing ensure you have a Python3 environment with numpy installed available.
+Our package is available on PyPI. Before installing ensure you have a Python3 environment with numpy installed available.
 
 If you are using a Mac you can setup an appropriate virtual environment in your desired directory as follows:
 
@@ -33,7 +33,7 @@ pip3 install numpy
 Once you have an appropriate environment set up, you can install the fluxions package with the following command:
 
 ```console
-pip3 install --index-url https://test.pypi.org/simple/ fluxions
+pip3 install fluxions
 ```
 - #### For developers:
 
