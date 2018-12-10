@@ -14,7 +14,13 @@
 
 ----
 
-### Installation Instructions 
+## Documentation
+
+1. [Fluxions](/fluxions/README.md) - forward mode auto differentiation tools
+2. [Optimization documentation](/fuxions/somefile) - optimization and root finding tools
+3. [Solar System Modelling](/solar_system/README.md) - an example project utilizing fluxions
+4. 
+## Installation Instructions 
 - #### For end users:
 Our package is available on Test PyPI. Before installing ensure you have a Python3 environment with numpy installed available.
 
