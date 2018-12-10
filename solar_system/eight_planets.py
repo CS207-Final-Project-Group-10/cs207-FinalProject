@@ -8,6 +8,8 @@ from importlib import util
 import numpy as np
 from numpy import cbrt
 import matplotlib as mpl
+# Allows matplotlib to run without being install as a framework on OSX
+mpl.use('TkAGG')
 import matplotlib.pyplot as plt
 from datetime import date
 from tqdm import tqdm
@@ -33,7 +35,6 @@ else:
 # *************************************************************************************************
 # Set plot style
 mpl.rcParams.update({'font.size': 20})
-
 
 # *************************************************************************************************
 def configuration(t0: date, t1: Optional[date] = None,  

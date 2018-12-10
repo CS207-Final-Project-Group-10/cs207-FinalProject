@@ -8,12 +8,14 @@ from importlib import util
 import numpy as np
 from numpy import cbrt
 import matplotlib as mpl
+# Allows matplotlib to run without being install as a framework on OSX
+mpl.use('TkAGG')
 import matplotlib.pyplot as plt
 from datetime import date
 from tqdm import tqdm
 from jplephem.spk import SPK
 from typing import Tuple, List, Dict, Optional, Callable
-
+from pkg_resources import resource_filename
 # *************************************************************************************************
 # Handle import of module fluxions differently if module
 # module is being loaded as __main__ or a module in a package.
@@ -49,7 +51,7 @@ day2sec: float = 24.0 * 3600.0
 # *************************************************************************************************
 # Objects pertaining to JPL ephemerides used repeatedly
 # Load the data file with planetary positions from 2000/01/01 to 2040/0101
-jpl_kernel = SPK.open('planets.bsp')
+jpl_kernel = SPK.open(resource_filename('solar_system', 'resources/planets.bsp'))
 # Dictionary with the integer IDs of the celestial bodies in frame 0 of planets.spk
 # Verify this by issuing print(kernel)
 jpl_body_id: Dict[str, int] = {

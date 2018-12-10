@@ -8,6 +8,8 @@ from importlib import util
 import numpy as np
 from numpy import cbrt
 import matplotlib as mpl
+# Allows matplotlib to run without being install as a framework on OSX
+mpl.use('TkAGG')
 import matplotlib.pyplot as plt
 from datetime import date
 
