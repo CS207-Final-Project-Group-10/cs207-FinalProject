@@ -376,6 +376,7 @@ logaddexp2 = DifferentiableFunctionFactory(np.logaddexp2, _deriv_logaddexp2, 'lo
 # sqrt
 # cbrt
 # square
+# logistic - not in numpy but specified by Sondak
 
 
 # The derivative of sqrt(x) = x^(1/2) is (1/2)x^(-1/2)
@@ -400,3 +401,15 @@ def _deriv_square(x):
 
 square = DifferentiableFunctionFactory(np.square, _deriv_square, 'square')
 
+# logistic function
+# https://en.wikipedia.org/wiki/Logistic_function
+def _logistic(x):
+    """The standard logistic function"""
+    return 1.0 / (1.0 + np.exp(-x))
+
+def _deriv_logistic(x):
+    """Derivative of the standard logistic function"""
+    y = _logistic(x)
+    return y * (1.0 - y)
+
+logistic = DifferentiableFunctionFactory(_logistic, _deriv_logistic, 'logistic')

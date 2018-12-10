@@ -37,8 +37,6 @@ def test_elementary_functions():
     report_success()
 
 
-
-
 # ***************************************************************************************
 def test_basics_singlevar():
     theta_vec = np.expand_dims(np.linspace(-5,5,21) * np.pi, axis=1)
@@ -346,6 +344,7 @@ def test_misc():
         _sqrt, _dsqrt = fl.sqrt(x2)()
         _cbrt, _dcbrt = fl.cbrt(x3)()
         _square, _dsquare = fl.square(x)()
+        _logistic, _dlogistic = fl.logistic(x)()
     
     # Known answers
     with np.errstate(divide='ignore'):
@@ -355,6 +354,15 @@ def test_misc():
         assert np.allclose(_dcbrt, (1.0/3.0) / (x*x))
         assert np.allclose(_square, x2)
         assert np.allclose(_dsquare, 2*x)
+        
+    # Test logistic function        
+    _logistic_y = 1.0 / (1.0 + np.exp(-x))
+    _logistic_dy_dx = _logistic_y * (1.0 - _logistic_y)
+    assert np.allclose(_logistic, _logistic_y)
+    assert np.allclose(_dlogistic, _logistic_dy_dx)
+    _logistic_y, _logistic_dy_dx = fl.logistic(0.0)()
+    assert _logistic_y == 0.5
+    assert _logistic_dy_dx == 0.25
 
     report_success()
 
