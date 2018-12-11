@@ -2,6 +2,7 @@ import numpy as np
 from enum import Enum
 from typing import List, Tuple, Dict, Union, Optional
 
+
 # Type alias for a value_type; this is an integer, float, or a numpy array
 scalar_type = Union[int, float]
 value_type = Union[int, float, np.ndarray]
@@ -367,9 +368,20 @@ class Fluxion:
         except AttributeError:
             return Division(Const(other), self)
 
-    def __pow__(self, p: int):
-        return Power(self, p)
+    def __pow__(self, other):
+        try:
+            return Power(self, other)
+        except AttributeError:
+            return Power(self, Const(other))
 
+            
+    def __rpow__(self, other):
+        try:
+            return Power(other, self)
+        except AttributeError:
+            return Power(Const(other), self)
+        
+        
     def __neg__(self):
         return Multiplication(self, Const(-1))
 
@@ -407,32 +419,6 @@ class Unop(Fluxion):
         self.m = f.m
         self.n = f.n
         self.var_names = f.var_names
-
-class Power(Unop):
-    """Raise a fluxion to the power p"""
-
-    def __init__(self, f: Fluxion, p: float = 0.0):
-        # Initialize the parent Unop class
-        Unop.__init__(self,f)
-        self.p = p
-
-    def _forward_mode(self, *args):
-        """Forward mode differentiation for a constant"""
-        # Evaluate inner function self.f
-        X: np.ndarray
-        dX: np.ndarray
-        X, dX = self.f._forward_mode(*args)
-        # Alias the power to p for legibility
-        p: float = self.p
-        # The function value
-        val = X ** p
-        # The derivative
-        diff = p * X ** (p-1) * dX
-        return (val, diff)
-
-    def __repr__(self):
-        return f'Power({str(self.f)}, {self.p})'
-
 
 # *************************************************************************************************
 class Binop(Fluxion):
@@ -545,6 +531,47 @@ class Division(Binop):
 
     def __repr__(self):
         return f'Division({str(self.f)}, {str(self.g)})'
+
+
+class Power(Binop):
+    """Raise a fluxion f to fluxion g"""
+    
+    def __init__(self, f: Fluxion, g: Fluxion):
+        # Initialize the parent Fluxion class
+        Binop.__init__(self, f, g)
+        self.name = f'Power({str(self.f)}, {str(self.g)})'
+    
+    def _forward_mode(self, *args):
+
+        if type(self.g) == Const:
+            # Forward mode differentiation for x^c
+            # d(x^c)/dx = c*x^(c-1)*dx
+
+            # Evaluate inner function self.f
+            X, dX = self.f._forward_mode(*args)
+            c = self.g.val(*args)
+            val = X ** c
+            diff = c * X ** (c-1) * dX
+            return (val, diff)
+
+        elif type(self.f) == Const:
+            # Forward mode differentiation for c^x
+            # d(c^x)/dx = ln(c)*c^x
+
+            # Evaluate inner function self.g
+            X, dX = self.g._forward_mode(*args)
+            c = self.f.val(*args)
+            val = c ** X
+            diff = np.log(c) * val * dX
+            return (val, diff)
+
+        else:
+            return NotImplementedError
+           
+
+    def __repr__(self):
+        return self.name
+
 
 # *************************************************************************************************
 class Var(Fluxion):
