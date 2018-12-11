@@ -10,11 +10,6 @@ else:
 def _check_input_vals(v_mapping):
     # wraps values in numpy arrays, as required for evaluation by fluxions,
     # if values in v_mapping are lists or scalars
-    #
-    # TODO: 
-    #    (1) PERHAPS THIS SHOULD BE DONE DOWNSTREAM (WITHIN FLUXION OBJECT)
-    #    (2) Check type of each value in dict to ensure homogeneity?
-    #    (3) Any more efficient way of doing this conversion for all dict values?
     keys = list(v_mapping.keys())
     vals = list(v_mapping.values())
     if type(vals[0]) == np.ndarray:
