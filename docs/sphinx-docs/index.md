@@ -1,28 +1,19 @@
 ## Fluxions Documentation
 
+## Introduction
+
 * [Click here to see the full API Reference](source/fluxions.html)
 
 Differential calculus was invented as a formal branch of mathematics in the middle of the 17th century independently by Isaac Newton and Gottfried Leibniz.  Newton's orginal term for a derivative with respect to time was a "fluxion," which gave its name to his last book, *Method of Fluxions*, published posthumously. Newton used differential calculus to solve the problem of the motion of the planets around the sun, and it has proven to be an essential tool for the sciences ever since.  In the modern era, essentially all scientific calculations of interest are performed on computers.  There are many scenarios where we know how to compute a function of interest and would like to efficiently evaluate its derivative(s).  The canonical example is root finding.  If we know a function's derivative, we can iteratively improve from a starting guess until we find a root using a simple procedure, Newton's Method.  Many phenomena of interest in physics and other sciences can be described as differential equations (either ODEs or PDEs).  The ability to efficiently evaluate derivatives is crucial in numerically solving these systems.
 
 In recent years, Machine Learning has been a hot research area.  Solving ML problems often hinges on the ability to train a neural network using some form of a gradient descent algorithm.  As the name suggests, this algorithm requires the ability to evaluate not just the function (here the output of the neural net) but also its first derivative, which in practice is typically the change in the error metric with respect to the parameter values.  These neural networks are massively complex functions that can have millions of parameters.  A procedure of numerically differentiating the network by shifting the value of each parameter has cost that scales linearly with the number of parameters.  Some form of automatic differentiation is vital to the practical use of neural nets.  One of the most successful machine learning libraries is TensorFlow by Google, which at its core is an enterprise class automatic differentiation library.
 
-## Background
-Calculus gives us a few simple rules for computing the derivative of a function composed of two more elementary subfunctions.  Most central to Automatic Differentiation is the Chain Rule of calculus, which states that the derivative of a composition is the product of two derivatives:
-$$f'(u(x)) = f'(u(x) \cdot u'(x)$$
-The chain rule works in multiple dimensions.  If $f$ is a function from $\mathbb{R}^n$ to $\mathbb{R}^m$, its derivative is an $m$ x $n$ matrix called the Jacobian.  The chain rule in the multidimensional case tells us to take the matrix product of an $m$ x $r$ matrix and an $r$ x $n$ matrix to compute the derivative.
-
-The essential idea of Automatic Differentiation is that computing the  derivative of any function can be reduced to evaluating and differentiating a sequence of simple subfunctions. These may be strung together in a complex graph with multiple steps, but each step will be a basic operation.  For the evaluation of a mathematical function, each step will consist of either a "primitive" or built-in function (e.g. +, -, x, /, sqrt, log, exp, pow, etc.) or a composition of these primitives.  As long as we know how to evaluate both the function f(x) and its derivative f'(x) at each step, we can trace the calculation through the computation graph and also keep track of the first derivative.
-
-The forward mode of Automatic Differentiation takes 3 arguments: a function, $f(x)$, a vector $x \in \mathbb{R}^n$ at which to evaluate the function $f(x)$, and a vector of 'seed' values for the derivatives, $dx\in \mathbb{R}^
-n$. Following the standard order of operations, the innermost elementary function calls of $f$ are evaluated at x and dx. As above, as long as we know how to evaluate both the elementary function f(x) and its derivative f'(x) at each step, pass the results of each to enclosing functions and apply the chain rule to keep track of the first derivative. Once all function calls are complete, the algorithm returns the values $f(x)$ and $f'(x)$.
-
-
 ## How to use `fluxions`
 
 ### Installation Instructions
 
 #### For end users:
-The `fluxions` package is available on Test PyPI. Before installing ensure you have a Python3 environment with numpy installed.
+The `fluxions` package is available on PyPI. Before installing ensure you have a Python3 environment with numpy installed.
 
 If you choose to install the package into a virtual environment, do so by first setting up the environment in your desired directory as follows:
 
@@ -37,7 +28,7 @@ pip3 install numpy
 Once you have an appropriate environment set up, you can install the `fluxions` package with the following command:
 
 ```console
-pip3 install --index-url https://test.pypi.org/simple/ fluxions
+pip3 install fluxions
 ```
 
 #### For developers:
@@ -61,7 +52,7 @@ pip3 install -r requirements.txt
 We use pytest for testing. In order to run the tests, execute the following from the root of the cloned directory:
 
 ```console
-pytest fluxions/
+pytest
 ```
 
 
@@ -137,6 +128,15 @@ array([2.])
 
 ```
 
+## Background
+Calculus gives us a few simple rules for computing the derivative of a function composed of two more elementary subfunctions.  Most central to Automatic Differentiation is the Chain Rule of calculus, which states that the derivative of a composition is the product of two derivatives:
+$$f'(u(x)) = f'(u(x) \cdot u'(x)$$
+The chain rule works in multiple dimensions.  If $f$ is a function from $\mathbb{R}^n$ to $\mathbb{R}^m$, its derivative is an $m$ x $n$ matrix called the Jacobian.  The chain rule in the multidimensional case tells us to take the matrix product of an $m$ x $r$ matrix and an $r$ x $n$ matrix to compute the derivative.
+
+The essential idea of Automatic Differentiation is that computing the  derivative of any function can be reduced to evaluating and differentiating a sequence of simple subfunctions. These may be strung together in a complex graph with multiple steps, but each step will be a basic operation.  For the evaluation of a mathematical function, each step will consist of either a "primitive" or built-in function (e.g. +, -, x, /, sqrt, log, exp, pow, etc.) or a composition of these primitives.  As long as we know how to evaluate both the function f(x) and its derivative f'(x) at each step, we can trace the calculation through the computation graph and also keep track of the first derivative.
+
+The forward mode of Automatic Differentiation takes 3 arguments: a function, $f(x)$, a vector $x \in \mathbb{R}^n$ at which to evaluate the function $f(x)$, and a vector of 'seed' values for the derivatives, $dx\in \mathbb{R}^
+n$. Following the standard order of operations, the innermost elementary function calls of $f$ are evaluated at x and dx. As above, as long as we know how to evaluate both the elementary function f(x) and its derivative f'(x) at each step, pass the results of each to enclosing functions and apply the chain rule to keep track of the first derivative. Once all function calls are complete, the algorithm returns the values $f(x)$ and $f'(x)$.
 
 ## Software organization
 
