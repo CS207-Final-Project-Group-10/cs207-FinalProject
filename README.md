@@ -12,9 +12,7 @@
 
 ## Documentation
 
-1. [Fluxions](/fluxions/README.md) - forward mode auto differentiation tools
-2. [Optimization documentation](/fuxions/somefile) - optimization and root finding tools
-3. [Solar System Modelling](/solar_system/README.md) - an example project utilizing fluxions
+The documentation can be found [here](https://fluxions.readthedocs.io/en/latest/index.html#)
    
 ## Installation Instructions 
 - #### For end users:
