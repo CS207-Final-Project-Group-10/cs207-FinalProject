@@ -1,4 +1,5 @@
-# CS207 Final Project Group 10 [![Build Status](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master)](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/CS207-Final-Project-Group-10/cs207-FinalProject/badge.svg)](https://coveralls.io/github/CS207-Final-Project-Group-10/cs207-FinalProject?branch=master)
+# CS207 Final Project Group 10 [![Build Status](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master)](https://travis-ci.com/CS207-Final-Project-Group-10/cs207-FinalProject.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/CS207-Final-Project-Group-10/cs207-FinalProject/badge.svg)](https://coveralls.io/github/CS207-Final-Project-Group-10/cs207-FinalProject?branch=master) [![Documentation Status](https://readthedocs.org/projects/fluxions/badge/?version=latest)](https://fluxions.readthedocs.io/en/latest/?badge=latest)
+
 
 
 ## Group Members:
@@ -12,9 +13,7 @@
 
 ## Documentation
 
-1. [Fluxions](/fluxions/README.md) - forward mode auto differentiation tools
-2. [Optimization documentation](/fuxions/somefile) - optimization and root finding tools
-3. [Solar System Modelling](/solar_system/README.md) - an example project utilizing fluxions
+The documentation can be found [here](https://fluxions.readthedocs.io/en/latest/index.html#)
    
 ## Installation Instructions 
 - #### For end users:
