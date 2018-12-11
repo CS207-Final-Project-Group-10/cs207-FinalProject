@@ -118,3 +118,7 @@ venv.bak/
 # Printer outputs
 *.emf
 *.prn
+
+# Sphinx
+_build/
+
