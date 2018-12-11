@@ -251,5 +251,75 @@ The `DifferentiableInnerFunction` class has one input, a Fluxion `f` that can be
 
 The `DifferentiableFunction` class is what is exposed to users. It is essentially a factory for producing instances of `DifferentiableInnerFunction`.  The `__init__` method associates one of these factories with the two callables for the function and its derivatives, plus the tensor sizes and names. That the elementary functions are all created from the DifferentiableFunction class allows users to create additional differentiable functions as desired.
 
+### Jacobian Function
+
+The `fluxions` module provides a `jacobian` function for evaluating vector-valued functions. Such functions can be built up by storing one or more Fluxion objects in a Python list or numpy array. 
+
+While implemented as a function rather than a class, `jacobian` maintains an API similar to the standard Fluxion API detailed above. In particular, the Jacobian of a vector- or scalar-valued function `F` with respect to variables `v`, evaluated at value(s) given by `v_mapping`, simply call:
+   <pre>
+   jacobian(F, v, v_mapping)
+   </pre>
+
+`F` may be a Fluxion object or a list of one or more Fluxions, while `v` is a list names (strings) of variable in `F`. The order of elements in `v` determines the order in which partials are returned in the Jacobian. `v_mapping` is a Python dict that binds variable names to numeric values.
+
+`jacobian` will always return a numpy array, the dimensions of which are determined by the dimensions of F and the values passed.
+
+Several illustrative examples of how to use `jacobian` follow:
+
+**Example 1:**
+The value returned for a function from $\mathbb{R^1} \rightarrow \mathbb{R^1}$ will be identical in value and structure to the derivative returned by calling `diff`:
+
+$$
+\begin{aligned}
+F(y) &= ylog(y) \\ 
+\Rightarrow J_F(y) &= log(y) + 1 \\
+\Rightarrow J_F(1) &= 1
+\end{aligned}
+$$
+
+```python
+>>> y = fl.Var('y')
+>>> f = y*fl.log(y)
+>>> f.diff({'y':1})
+array([[1.]])
+>>> fl.jacobian(f, ['y'], {'y':1})
+array([[1.]])
+```
+
+**Example 2:**
+If F is a function from $\mathbb{R^m} \rightarrow \mathbb{R^n}$, then `jacobian` returns an m:n array if `v_mapping` contains scalar variable mappings
+   
+$$
+\begin{aligned}
+F(x,y) &= \begin{bmatrix} x^2 \\ x ln(y) \end{bmatrix} \\ \\
+\Rightarrow J_F(x,y) &= \begin{bmatrix}
+2x & x^2 \\
+ln(y) & x/y
+\end{bmatrix} \\ \\
+\Rightarrow J_F(2,1) &= \begin{bmatrix}
+4 & 0 \\ 
+0 & 2
+\end{bmatrix}
+\end{aligned}
+$$
+
+```python
+>>> x = fl.Var('x')
+>>> fl.jacobian([x**2, x*log_y], ['x','y'], {'x':2, 'y':1})
+array([[4., 0.],
+       [0., 2.]])
+```
+
+**Example 3:**
+`jacobian` handles tensors: if variables `v` mapped to vectors of length T, then `jacobian` returns an **m : n : T** array
+
+```python
+>>> J = fl.jacobian([x**2, x*log_y, x+y], ['x','y'], {'x':np.linspace(1,10,10), 'y':np.logspace(1,10,10)})
+>>> J.shape
+(2, 3, 10)
+```
+
 
 ## Future Plans
+
+- In addition to allowing users to differentiate vector-valued functions via the `jacobian` function, users may be able to evaluate such functions much as they can with scalar-valued Fluxions (via the `val` method). This functionality could be implemented by creating a container: a "multi-fluxion" composed of one or more Fluxion objects that (much as one can write F(x,y)=[f_1(x,y), f_2(x,y), ...]). Like a simple Fluxion, this container would have `val` and `diff` methods.
