@@ -435,7 +435,7 @@ def main():
     # Plot the earth-sun orbits in 2018 at weekly intervals using the simulation
     plot_step: int = 7 * steps_per_day
     plot(q_jpl[::plot_step], bodies, plot_colors, 'JPL', 'figs/eight_planets_jpl.png')
-    plot(q_sim[::plot_step], bodies, plot_colors, 'Leapfrog', 'figs/earth_sun_leapfrog.png')
+    plot(q_sim[::plot_step], bodies, plot_colors, 'Leapfrog', 'figs/eight_planets_leapfrog.png')
     
     # Compute the MSE in AUs between the two simulations
     mse = calc_mse(q_jpl, q_sim)
