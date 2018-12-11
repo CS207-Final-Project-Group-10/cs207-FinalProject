@@ -130,8 +130,9 @@ array([2.])
 
 ## Background
 Calculus gives us a few simple rules for computing the derivative of a function composed of two more elementary subfunctions.  Most central to Automatic Differentiation is the Chain Rule of calculus, which states that the derivative of a composition is the product of two derivatives:
-$$f'(u(x)) = f'(u(x) \cdot u'(x)$$
-The chain rule works in multiple dimensions.  If $f$ is a function from $\mathbb{R}^n$ to $\mathbb{R}^m$, its derivative is an $m$ x $n$ matrix called the Jacobian.  The chain rule in the multidimensional case tells us to take the matrix product of an $m$ x $r$ matrix and an $r$ x $n$ matrix to compute the derivative.
+.. math::
+  f'(u(x)) = f'(u(x) \cdot u'(x)
+The chain rule works in multiple dimensions.  If :math:`f` is a function from $\mathbb{R}^n$ to $\mathbb{R}^m$, its derivative is an $m$ x $n$ matrix called the Jacobian.  The chain rule in the multidimensional case tells us to take the matrix product of an $m$ x $r$ matrix and an $r$ x $n$ matrix to compute the derivative.
 
 The essential idea of Automatic Differentiation is that computing the  derivative of any function can be reduced to evaluating and differentiating a sequence of simple subfunctions. These may be strung together in a complex graph with multiple steps, but each step will be a basic operation.  For the evaluation of a mathematical function, each step will consist of either a "primitive" or built-in function (e.g. +, -, x, /, sqrt, log, exp, pow, etc.) or a composition of these primitives.  As long as we know how to evaluate both the function f(x) and its derivative f'(x) at each step, we can trace the calculation through the computation graph and also keep track of the first derivative.
 
