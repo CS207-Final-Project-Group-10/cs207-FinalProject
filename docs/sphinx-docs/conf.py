@@ -40,6 +40,7 @@ release = '2.0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'm2r'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,10 +51,6 @@ templates_path = ['_templates']
 #
 # source_suffix = ['.rst', '.md']
 source_suffix = ['.rst', '.md']
-
-source_parsers = {
-   '.md': 'recommonmark.parser.CommonMarkParser',
-}
 
 # The master toctree document.
 master_doc = 'index'

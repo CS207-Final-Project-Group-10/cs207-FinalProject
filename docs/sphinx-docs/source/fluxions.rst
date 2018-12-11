@@ -1,9 +1,6 @@
 fluxions package
 ================
 
-Submodules
-----------
-
 fluxions.elementary\_functions module
 -------------------------------------
 
