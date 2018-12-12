@@ -27,8 +27,28 @@ def steepest_descent(x, f: fl.Fluxion, tol: float =1e-8):
     return (xs[0:i+1,:], i+1, stepsize, xs[i])
 
 #newton's method
-def newtons_method(x, f, df, tol: float =1e-8):
-    pass
+def newtons_method(x, F, dF, tol: float =1e-8):
+    var_dict = {}
+    var_list = []
+    for f in dF:
+        for v in sorted(F.var_names):
+            var_dict[v] = F.var_names[v]
+            if v not in var_list:
+                var_list.append(v)
+    xs = np.zeros([2001,2])
+    xs[0]=x
+    var_dict[var_list[0]]=x[0]
+    var_dict[var_list[1]]=x[1]
+    for i in range(0,2000):
+        x = xs[i]
+        var_dict[var_list[0]]=x[0]
+        var_dict[var_list[1]]=x[1]
+        grad = -F.diff(var_dict).squeeze()
+        xs[i+1]= x + np.linalg.solve(fl.jacobian(dF, var_list, var_dict),grad).squeeze()
+        stepsize = np.linalg.norm(xs[i+1]-xs[i])
+        if stepsize < tol:
+            break
+    return (xs[0:i+1,:],i, stepsize, xs[i])
 
 #BFGS
 def bfgs(x,f: fl.Fluxion, tol: float =1e-8):
