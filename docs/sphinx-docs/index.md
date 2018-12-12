@@ -256,9 +256,8 @@ The `DifferentiableFunction` class is what is exposed to users. It is essentiall
 The `fluxions` module provides a `jacobian` function for evaluating vector-valued functions. Such functions can be built up by storing one or more Fluxion objects in a Python list or numpy array. 
 
 While implemented as a function rather than a class, `jacobian` maintains an API similar to the standard Fluxion API detailed above. In particular, the Jacobian of a vector- or scalar-valued function `F` with respect to variables `v`, evaluated at value(s) given by `v_mapping`, simply call:
-   <pre>
-   jacobian(F, v, v_mapping)
-   </pre>
+
+   `jacobian(F, v, v_mapping)`
 
 `F` may be a Fluxion object or a list of one or more Fluxions, while `v` is a list names (strings) of variable in `F`. The order of elements in `v` determines the order in which partials are returned in the Jacobian. `v_mapping` is a Python dict that binds variable names to numeric values.
 
@@ -267,15 +266,7 @@ While implemented as a function rather than a class, `jacobian` maintains an API
 Several illustrative examples of how to use `jacobian` follow:
 
 **Example 1:**
-The value returned for a function from $\mathbb{R^1} \rightarrow \mathbb{R^1}$ will be identical in value and structure to the derivative returned by calling `diff`:
-
-$$
-\begin{aligned}
-F(y) &= ylog(y) \\ 
-\Rightarrow J_F(y) &= log(y) + 1 \\
-\Rightarrow J_F(1) &= 1
-\end{aligned}
-$$
+The value returned for a function from R^1 to R^1 will be identical in value and structure to the derivative returned by calling `diff`:
 
 ```python
 >>> y = fl.Var('y')
@@ -287,10 +278,9 @@ array([[1.]])
 ```
 
 **Example 2:**
-If F is a function from $\mathbb{R^m} \rightarrow \mathbb{R^n}$, then `jacobian` returns an m:n array if `v_mapping` contains scalar variable mappings
+If F is a function from R^m to R^n, then `jacobian` returns an m:n array if `v_mapping` contains scalar variable mappings
    
 $$
-\begin{aligned}
 F(x,y) &= \begin{bmatrix} x^2 \\ x ln(y) \end{bmatrix} \\ \\
 \Rightarrow J_F(x,y) &= \begin{bmatrix}
 2x & x^2 \\
@@ -300,7 +290,6 @@ ln(y) & x/y
 4 & 0 \\ 
 0 & 2
 \end{bmatrix}
-\end{aligned}
 $$
 
 ```python
