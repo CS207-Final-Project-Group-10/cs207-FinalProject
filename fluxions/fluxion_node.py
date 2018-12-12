@@ -100,13 +100,13 @@ class Fluxion:
         # The most common case is two arguments were passed for the vars and seeds
         # They can both be numpy arrays or dicts
         if argc == 0:
-            return (None, None)
+            return (self._parse_var_dict(self.var_names), self._default_seed(self.var_names))
         if argc == 1:
             # The lone argument
             arg = args[0]
             # Case zero: None
             if arg is None:
-                return (None, None)
+                arg_vars = self._parse_var_dict(self.var_names)
             # Case one: a dict
             elif isinstance(arg, dict):
                 arg_vars = self._parse_var_dict(arg)
@@ -377,7 +377,7 @@ class Fluxion:
         try:
             return Power(p, self)
         except AttributeError:
-            return Power(Const(p), self)   
+            return Power(Const(p), self)
 
     def __neg__(self):
         return Multiplication(self, Const(-1))
