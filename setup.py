@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="fluxions",
-    version="2.0.1",
+    version="2.0.3",
     author="Harvard CS207 Final Project Group 10",
     description="A package for Automatic Differentiation",
     long_description=long_description,
@@ -13,7 +13,7 @@ setup(
     url="https://github.com/CS207-Final-Project-Group-10/cs207-FinalProject",
     tests_require=["pytest"],
     packages=['fluxions'],
-    install_requires=[],
+    install_requires=['scipy'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
