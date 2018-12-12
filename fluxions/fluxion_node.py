@@ -368,7 +368,16 @@ class Fluxion:
             return Division(Const(other), self)
 
     def __pow__(self, p: int):
-        return Power(self, p)
+        try:
+            return Power(self, p)
+        except AttributeError:
+            return Power(self, Const(p))
+
+    def __rpow__(self, p: int):
+        try:
+            return Power(p, self)
+        except AttributeError:
+            return Power(Const(p), self)   
 
     def __neg__(self):
         return Multiplication(self, Const(-1))
@@ -408,31 +417,6 @@ class Unop(Fluxion):
         self.n = f.n
         self.var_names = f.var_names
 
-class Power(Unop):
-    """Raise a fluxion to the power p"""
-
-    def __init__(self, f: Fluxion, p: float = 0.0):
-        # Initialize the parent Unop class
-        Unop.__init__(self,f)
-        self.p = p
-
-    def _forward_mode(self, *args):
-        """Forward mode differentiation for a constant"""
-        # Evaluate inner function self.f
-        X: np.ndarray
-        dX: np.ndarray
-        X, dX = self.f._forward_mode(*args)
-        # Alias the power to p for legibility
-        p: float = self.p
-        # The function value
-        val = X ** p
-        # The derivative
-        diff = p * X ** (p-1) * dX
-        return (val, diff)
-
-    def __repr__(self):
-        return f'Power({str(self.f)}, {self.p})'
-
 
 # *************************************************************************************************
 class Binop(Fluxion):
@@ -462,6 +446,30 @@ class Binop(Fluxion):
             raise ValueError(f'In {self.__repr__()}, ms f.n={f.n} and g.n={g.n} must match for binary operation or one of them must be 1.')
         self.n = max(f.n,g.n)
 
+class Power(Binop):
+    """Raise a fluxion to the power g"""
+
+    def __init__(self, f: Fluxion, g: Fluxion):
+        # Initialize the parent Binop class
+        Binop.__init__(self, f, g)
+
+    def _forward_mode(self, *args):
+        """Forward mode differentiation for a constant"""
+        # Evaluate inner function self.f
+        X: np.ndarray
+        dX: np.ndarray
+        Y: np.ndarray
+        dY: np.ndarray
+        X, dX = self.f._forward_mode(*args)
+        Y, dY = self.g._forward_mode(*args)
+        # The function value
+        val = X ** Y
+        # The derivative
+        diff = val * (((Y * dX) / X) + np.log(X) * dY)
+        return (val, diff)
+
+    def __repr__(self):
+        return f'Power({str(self.f)}, {self.g})'
 
 class Addition(Binop):
     """Addition (sum) of two fluxions; h = f + g"""
