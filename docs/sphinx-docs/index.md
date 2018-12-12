@@ -278,19 +278,7 @@ array([[1.]])
 ```
 
 **Example 2:**
-If F is a function from R^m to R^n, then `jacobian` returns an m:n array if `v_mapping` contains scalar variable mappings
-   
-$$
-F(x,y) &= \begin{bmatrix} x^2 \\ x ln(y) \end{bmatrix} \\ \\
-\Rightarrow J_F(x,y) &= \begin{bmatrix}
-2x & x^2 \\
-ln(y) & x/y
-\end{bmatrix} \\ \\
-\Rightarrow J_F(2,1) &= \begin{bmatrix}
-4 & 0 \\ 
-0 & 2
-\end{bmatrix}
-$$
+If F is a function from R^m to R^n, then `jacobian` returns an m:n array if `v_mapping` contains scalar variable mappings:
 
 ```python
 >>> x = fl.Var('x')
