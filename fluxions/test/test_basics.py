@@ -68,13 +68,13 @@ def test_basic_usage():
     assert(f4.diff({'x':2}) == -1.5)
 
     # Take a power
-    f5 = x ** 2
+    f5 = fl.Power(x, 2)
     assert(f5.val(8) == 64)
     assert(f5.diff(8) == 16)
     assert(f5() == (1.0, 2.0))
     assert(f5(1) == (1.0, 2.0))
     assert(f5({'x':1}) == (1.0, 2.0))
-    assert repr(f5) == "Power(Var(x, 1.0), Const(2.0))"
+    assert repr(f5) == "Power(Var(x, 1.0), 2)"
 
     #check assignment
     a = fl.Fluxion()
